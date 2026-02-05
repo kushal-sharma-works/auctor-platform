@@ -1,0 +1,24 @@
+name: Backend – Kotlin (Ktor)
+
+on:
+  push:
+    paths:
+      - "services/execution-service/**"
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Build
+        working-directory: services/execution-service
+        run: ./gradlew clean installDist

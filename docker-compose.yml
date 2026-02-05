@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  definition-service:
+    build: ./services/definition-service
+    ports:
+      - "8081:8081"
+
+  execution-service:
+    build: ./services/execution-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - definition-service
+
+  web:
+    build: ./web
+    ports:
+      - "3000:3000"
+    depends_on:
+      - execution-service
