@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package definition.v1;
+
+option java_multiple_files = true;
+option java_package = "com.auctor.definition.grpc.v1";
+option java_outer_classname = "DefinitionProtoV1";
+
+/*
+ * DefinitionService owns the domain definition.
+ * Other services consume this contract.
+ */
+service DefinitionService {
+  rpc GetDefinition (GetDefinitionRequest) returns (GetDefinitionResponse);
+}
+
+message GetDefinitionRequest {
+  string id = 1;
+}
+
+message GetDefinitionResponse {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+}

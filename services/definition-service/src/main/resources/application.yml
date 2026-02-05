@@ -7,5 +7,23 @@ spring:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
 
+  jmx:
+    enabled: true
+
 server:
   port: 8081
+
+grpc:
+  server:
+    port: 9090
+    enable-keep-alive: true
+    reflection:
+      enabled: true
+
+logging:
+  level:
+    net.devh.boot.grpc.server: DEBUG
+    net.devh.boot.grpc: DEBUG
+    io.grpc: DEBUG
+    root: INFO
+
