@@ -1,0 +1,17 @@
+# JVM
+target/
+build/
+*.log
+
+# Node
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Env
+.env
