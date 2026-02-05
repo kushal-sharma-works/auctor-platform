@@ -49,6 +49,11 @@ tasks.withType<Jar> {
     }
 }
 
+// ADD THIS BLOCK - This is the only addition
+tasks.test {
+    useJUnitPlatform()
+}
+
 protobuf {
     protoc {
         artifact = "com.google.protobuf:protoc:3.25.3"
