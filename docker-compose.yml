@@ -1,10 +1,35 @@
 version: "3.9"
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: auctor-postgres
+    environment:
+      POSTGRES_DB: definition
+      POSTGRES_USER: definition
+      POSTGRES_PASSWORD: definition
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U definition"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   definition-service:
     build: ./services/definition-service
     ports:
       - "8081:8081"
+      - "9090:9090"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/definition
+      - SPRING_DATASOURCE_USERNAME=definition
+      - SPRING_DATASOURCE_PASSWORD=definition
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   execution-service:
     build: ./services/execution-service
@@ -19,3 +44,6 @@ services:
       - "3000:3000"
     depends_on:
       - execution-service
+
+volumes:
+  postgres_data:

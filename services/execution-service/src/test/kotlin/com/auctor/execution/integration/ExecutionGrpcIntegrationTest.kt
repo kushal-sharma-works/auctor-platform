@@ -1,26 +1,31 @@
-package com.auctor.execution.grpc
+package com.auctor.execution.integration
 
 import com.auctor.definition.grpc.v1.DefinitionServiceGrpcKt
 import com.auctor.definition.grpc.v1.GetDefinitionRequest
 import com.auctor.definition.grpc.v1.GetDefinitionResponse
+import com.auctor.execution.grpc.DefinitionGrpcClient
+import com.auctor.execution.http.executionRoutes
+import com.auctor.execution.service.ExecutionService
 import io.grpc.inprocess.InProcessChannelBuilder
 import io.grpc.inprocess.InProcessServerBuilder
-import kotlinx.coroutines.runBlocking
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
+import io.ktor.server.testing.testApplication
+import org.junit.jupiter.api.Test
 import java.util.UUID
+import kotlin.test.assertTrue
 
-class DefinitionClientTest {
+class ExecutionGrpcIntegrationTest {
 
     @Test
-    fun `should call definition-service via grpc`() {
-        val serverName = "definition-client-test-${UUID.randomUUID()}"
+    fun `http call triggers real grpc`() {
+        val serverName = "definition-test-${UUID.randomUUID()}"
         val definitionService = object : DefinitionServiceGrpcKt.DefinitionServiceCoroutineImplBase() {
             override suspend fun getDefinition(request: GetDefinitionRequest): GetDefinitionResponse {
                 return GetDefinitionResponse.newBuilder()
                     .setId(request.id)
                     .setName("sample-definition")
-                    .setDescription("stored in database")
+                    .setDescription("sample-description")
                     .build()
             }
         }
@@ -37,18 +42,20 @@ class DefinitionClientTest {
             .directExecutor()
             .build()
 
-        val client = DefinitionGrpcClient(channel)
+        val definitionClient = DefinitionGrpcClient(channel)
 
         try {
-            val response = runBlocking {
-                client.getDefinition("123")
-            }
+            testApplication {
+                application {
+                    val executionService = ExecutionService(definitionClient)
+                    executionRoutes(executionService)
+                }
 
-            assertEquals("123", response.id)
-            assertEquals("sample-definition", response.name)
-            assertEquals("stored in database", response.description)
+                val response = client.get("/execute/123")
+                assertTrue(response.bodyAsText().contains("sample-definition"))
+            }
         } finally {
-            client.close()
+            definitionClient.close()
             server.shutdownNow()
         }
     }

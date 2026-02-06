@@ -2,13 +2,22 @@ spring:
   application:
     name: definition-service
 
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
-
-  jmx:
-    enabled: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/definition
+    username: definition
+    password: definition
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Changed back to validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  
+  flyway:
+    enabled: true  # Re-enabled
+    baseline-on-migrate: true
 
 server:
   port: 8081
@@ -26,4 +35,3 @@ logging:
     net.devh.boot.grpc: DEBUG
     io.grpc: DEBUG
     root: INFO
-

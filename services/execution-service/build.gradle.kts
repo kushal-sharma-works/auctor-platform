@@ -35,12 +35,19 @@ dependencies {
     implementation("io.grpc:grpc-netty-shaded:1.63.0")
     implementation("io.grpc:grpc-protobuf:1.63.0")
     implementation("io.grpc:grpc-stub:1.63.0")
+    implementation("io.grpc:grpc-kotlin-stub:1.4.1")
     implementation("com.google.protobuf:protobuf-java:3.25.3")
 
     // Required for generated gRPC code
     implementation("javax.annotation:javax.annotation-api:1.3.2")
 
     testImplementation(kotlin("test"))
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testImplementation("io.ktor:ktor-server-test-host-jvm:3.0.0")
+    testImplementation("io.grpc:grpc-inprocess:1.63.0")
+    testImplementation("org.testcontainers:testcontainers:1.19.8")
+    testImplementation("org.testcontainers:postgresql:1.19.8")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
 }
 
 tasks.withType<Jar> {
@@ -63,12 +70,16 @@ protobuf {
         create("grpc") {
             artifact = "io.grpc:protoc-gen-grpc-java:1.63.0"
         }
+        create("grpckt") {
+            artifact = "io.grpc:protoc-gen-grpc-kotlin:1.4.1:jdk8@jar"
+        }
     }
 
     generateProtoTasks {
         all().configureEach {
             plugins {
                 create("grpc")
+                create("grpckt")
             }
         }
     }
@@ -79,6 +90,10 @@ sourceSets {
         java {
             srcDir("build/generated/source/proto/main/java")
             srcDir("build/generated/source/proto/main/grpc")
+        }
+        kotlin {
+            srcDir("build/generated/source/proto/main/kotlin")
+            srcDir("build/generated/source/proto/main/grpckt")
         }
     }
 }
