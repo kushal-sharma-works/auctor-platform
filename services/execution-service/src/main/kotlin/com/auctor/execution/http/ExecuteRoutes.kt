@@ -1,27 +1,35 @@
 package com.auctor.execution.http
 
-import com.auctor.execution.service.ExecutionService
+import com.auctor.execution.grpc.DefinitionGrpcClientFactory
+import com.auctor.execution.security.toAuthContext
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-fun Application.executionRoutes(
-    executionService: ExecutionService
-) {
+fun Application.executionRoutes() {
+
     routing {
-        get("/health") {
-            call.respondText("OK")
-        }
+        authenticate("auth-jwt") {
 
-        get("/execute/{id}") {
-            val id = call.parameters["id"]
-                ?: error("Missing id")
+            get("/execute/{id}") {
+                val principal = call.principal<JWTPrincipal>()
+                    ?: error("JWT principal missing")
 
-            val result = executionService.execute(id)
+                val authContext = principal.toAuthContext()
 
-            call.respondText(
-                "id=${result.id}, name=${result.name}, desc=${result.description}"
-            )
+                val definitionClient =
+                    DefinitionGrpcClientFactory.create(authContext)
+
+                val response =
+                    definitionClient.getDefinition {
+                        id = call.parameters["id"]!!
+                    }
+
+                call.respondText(
+                    "id=${response.id}, name=${response.name}, desc=${response.description}"
+                )
+            }
         }
     }
 }

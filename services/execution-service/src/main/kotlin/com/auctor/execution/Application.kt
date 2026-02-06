@@ -1,6 +1,8 @@
 package com.auctor.execution
 
 import com.auctor.execution.http.executionRoutes
+import com.auctor.execution.grpc.DefinitionGrpcClient
+import com.auctor.execution.security.configureAuth
 import com.auctor.execution.service.ExecutionService
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -12,7 +14,11 @@ fun main() {
     }.start(wait = true)
 }
 
-fun Application.module() {
-    val executionService = ExecutionService()
+fun Application.module(
+    definitionClient: DefinitionGrpcClient = DefinitionGrpcClient()
+) {
+    configureAuth()
+
+    val executionService = ExecutionService(definitionClient)
     executionRoutes(executionService)
 }

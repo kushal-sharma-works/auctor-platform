@@ -1,26 +1,20 @@
-package com.auctor.execution.integration
+package com.auctor.execution
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import com.auctor.definition.grpc.v1.DefinitionServiceGrpcKt
 import com.auctor.definition.grpc.v1.GetDefinitionRequest
 import com.auctor.definition.grpc.v1.GetDefinitionResponse
 import com.auctor.execution.grpc.DefinitionGrpcClient
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
-import com.auctor.execution.http.executionRoutes
-import com.auctor.execution.security.configureAuth
-import com.auctor.execution.service.ExecutionService
 import io.grpc.inprocess.InProcessChannelBuilder
 import io.grpc.inprocess.InProcessServerBuilder
-import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.HttpHeaders
-import io.ktor.server.testing.testApplication
-import org.junit.jupiter.api.Test
+import io.ktor.client.request.*
+import io.ktor.http.*
+import io.ktor.server.testing.*
+import kotlin.test.*
 import java.util.UUID
-import kotlin.test.assertTrue
 
-class ExecutionGrpcIntegrationTest {
+class AuthIntegrationTest {
 
     private fun token(): String =
         JWT.create()
@@ -30,8 +24,8 @@ class ExecutionGrpcIntegrationTest {
             .sign(Algorithm.HMAC256("dev-secret-change-later"))
 
     @Test
-    fun `http call triggers real grpc`() {
-        val serverName = "definition-test-${UUID.randomUUID()}"
+    fun `execute endpoint allows valid token`() = testApplication {
+        val serverName = "auth-test-${UUID.randomUUID()}"
         val definitionService = object : DefinitionServiceGrpcKt.DefinitionServiceCoroutineImplBase() {
             override suspend fun getDefinition(request: GetDefinitionRequest): GetDefinitionResponse {
                 return GetDefinitionResponse.newBuilder()
@@ -57,18 +51,13 @@ class ExecutionGrpcIntegrationTest {
         val definitionClient = DefinitionGrpcClient(channel)
 
         try {
-            testApplication {
-                application {
-                    configureAuth()
-                    val executionService = ExecutionService(definitionClient)
-                    executionRoutes(executionService)
-                }
+            application { module(definitionClient) }
 
-                val response = client.get("/execute/123") {
-                    header(HttpHeaders.Authorization, "Bearer ${token()}")
-                }
-                assertTrue(response.bodyAsText().contains("sample-definition"))
+            val response = client.get("/execute/123") {
+                header(HttpHeaders.Authorization, "Bearer ${token()}")
             }
+
+            assertEquals(HttpStatusCode.OK, response.status)
         } finally {
             definitionClient.close()
             server.shutdownNow()

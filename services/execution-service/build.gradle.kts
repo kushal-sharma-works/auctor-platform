@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.2.20"
+    kotlin("plugin.serialization") version "2.2.20"
     application
     id("com.google.protobuf") version "0.9.4"
 }
@@ -48,6 +49,11 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers:1.19.8")
     testImplementation("org.testcontainers:postgresql:1.19.8")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+    // Security
+    implementation("io.ktor:ktor-server-auth-jvm:3.0.0")
+    implementation("io.ktor:ktor-server-auth-jwt-jvm:3.0.0")
+    implementation("com.auth0:java-jwt:4.4.0")
+
 }
 
 tasks.withType<Jar> {
