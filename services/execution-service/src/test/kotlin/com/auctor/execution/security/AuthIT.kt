@@ -20,6 +20,7 @@ class AuthIntegrationTest {
         JWT.create()
             .withIssuer("auctor-auth")
             .withAudience("execution-service")
+            .withSubject("test-user")
             .withClaim("roles", listOf("EXECUTOR"))
             .sign(Algorithm.HMAC256("dev-secret-change-later"))
 

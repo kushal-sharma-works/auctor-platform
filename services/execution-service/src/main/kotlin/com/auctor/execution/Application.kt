@@ -20,5 +20,5 @@ fun Application.module(
     configureAuth()
 
     val executionService = ExecutionService(definitionClient)
-    executionRoutes(executionService)
+    executionRoutes()
 }

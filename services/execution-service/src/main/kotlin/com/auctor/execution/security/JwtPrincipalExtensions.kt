@@ -9,6 +9,6 @@ data class AuthContext(
 
 fun JWTPrincipal.toAuthContext(): AuthContext =
     AuthContext(
-        userId = payload.subject,
-        roles = payload.getClaim("roles").asList(String::class.java)
+        userId = payload.subject ?: "unknown",
+        roles = payload.getClaim("roles")?.asList(String::class.java) ?: emptyList()
     )

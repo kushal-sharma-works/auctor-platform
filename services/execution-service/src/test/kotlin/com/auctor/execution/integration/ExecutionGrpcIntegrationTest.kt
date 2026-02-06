@@ -26,6 +26,7 @@ class ExecutionGrpcIntegrationTest {
         JWT.create()
             .withIssuer("auctor-auth")
             .withAudience("execution-service")
+            .withSubject("test-user")
             .withClaim("roles", listOf("EXECUTOR"))
             .sign(Algorithm.HMAC256("dev-secret-change-later"))
 
@@ -61,7 +62,7 @@ class ExecutionGrpcIntegrationTest {
                 application {
                     configureAuth()
                     val executionService = ExecutionService(definitionClient)
-                    executionRoutes(executionService)
+                    executionRoutes()
                 }
 
                 val response = client.get("/execute/123") {
