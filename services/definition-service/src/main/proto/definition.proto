@@ -4,22 +4,64 @@ package definition.v1;
 
 option java_multiple_files = true;
 option java_package = "com.auctor.definition.grpc.v1";
-option java_outer_classname = "DefinitionProtoV1";
 
 /*
  * DefinitionService owns the domain definition.
  * Other services consume this contract.
  */
 service DefinitionService {
-  rpc GetDefinition (GetDefinitionRequest) returns (GetDefinitionResponse);
+  rpc GetWorkflow (GetWorkflowRequest) returns (WorkflowResponse);
+  rpc GetPolicy (GetPolicyRequest) returns (PolicyResponse);
+  rpc EvaluatePolicy (EvaluatePolicyRequest) returns (EvaluatePolicyResponse);
 }
 
-message GetDefinitionRequest {
+message GetWorkflowRequest {
   string id = 1;
+  int32 version = 2;
 }
 
-message GetDefinitionResponse {
+message WorkflowResponse {
   string id = 1;
   string name = 2;
-  string description = 3;
+  int32 version = 3;
+  string status = 4;
+  repeated string states = 5;
+  string initial_state = 6;
+  repeated TransitionProto transitions = 7;
+}
+
+message TransitionProto {
+  string from_state = 1;
+  string to_state = 2;
+  string policy_ref = 3;
+}
+
+message GetPolicyRequest {
+  string id = 1;
+  int32 version = 2;
+}
+
+message PolicyResponse {
+  string id = 1;
+  string name = 2;
+  int32 version = 3;
+  string status = 4;
+  repeated PolicyConditionProto conditions = 5;
+}
+
+message PolicyConditionProto {
+  string field = 1;
+  string operator = 2;
+  string value = 3;
+}
+
+message EvaluatePolicyRequest {
+  string policy_id = 1;
+  int32 policy_version = 2;
+  map<string, string> context = 3;
+}
+
+message EvaluatePolicyResponse {
+  bool allowed = 1;
+  string explanation = 2;
 }

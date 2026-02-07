@@ -1,0 +1,47 @@
+{
+  "request": {
+    "name": "08-create-workflow-simple",
+    "method": "POST",
+    "url": "http://localhost:8081/api/v1/workflows",
+    "timestamp": "Sat Feb  7 12:32:05 UTC 2026",
+    "body": {
+      "name": "Simple Two-State Workflow",
+      "states": [
+        "START",
+        "END"
+      ],
+      "initialState": "START",
+      "transitions": [
+        {
+          "fromState": "START",
+          "toState": "END",
+          "guardExpression": "completed == true"
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": "201",
+    "body": {
+      "id": "ca8b4a46-33a9-4f88-86b6-9fd9fabdfd69",
+      "name": "Simple Two-State Workflow",
+      "version": 1,
+      "status": "DRAFT",
+      "states": [
+        "START",
+        "END"
+      ],
+      "initialState": "START",
+      "transitions": [
+        {
+          "fromState": "START",
+          "toState": "END",
+          "policyRef": null,
+          "guardExpression": "completed == true"
+        }
+      ],
+      "createdAt": "2026-02-07T12:32:05.630018703Z",
+      "updatedAt": "2026-02-07T12:32:05.630018703Z"
+    }
+  }
+}
