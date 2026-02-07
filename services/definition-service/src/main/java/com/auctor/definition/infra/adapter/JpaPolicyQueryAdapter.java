@@ -24,7 +24,7 @@ public class JpaPolicyQueryAdapter implements PolicyQueryPort {
     
     @Override
     public Optional<PolicyDefinition> findById(PolicyId id) {
-        return repository.findLatestByIdOrderByVersionDesc(id.value())
+        return repository.findFirstByIdOrderByVersionDesc(id.value())
             .map(DomainMapper::toPolicyDomain);
     }
     

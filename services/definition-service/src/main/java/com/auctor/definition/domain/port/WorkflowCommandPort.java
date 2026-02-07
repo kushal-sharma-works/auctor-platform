@@ -12,9 +12,4 @@ public interface WorkflowCommandPort {
      * Save a workflow definition.
      */
     WorkflowDefinition save(WorkflowDefinition workflow);
-    
-    /**
-     * Publish a workflow definition.
-     */
-    WorkflowDefinition publish(WorkflowId id);
 }

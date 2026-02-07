@@ -25,11 +25,4 @@ public class JpaPolicyCommandAdapter implements PolicyCommandPort {
         PolicyJpaEntity saved = repository.save(entity);
         return DomainMapper.toPolicyDomain(saved);
     }
-    
-    @Override
-    public PolicyDefinition publish(PolicyId id) {
-        // This method just delegates to save after status change
-        // The actual logic is in PolicyService
-        throw new UnsupportedOperationException("Use PolicyService.publish instead");
-    }
 }

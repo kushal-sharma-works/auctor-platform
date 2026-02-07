@@ -57,8 +57,10 @@ public class PolicyService {
             throw new IllegalArgumentException("Policy must be in DRAFT status to publish");
         }
         
-        // Update status to PUBLISHED and save
-        PolicyDefinition publishedPolicy = policy.withStatus(new PolicyStatus.Published());
+        // Update status to PUBLISHED and save as a new version
+        PolicyDefinition publishedPolicy = policy
+            .withStatus(new PolicyStatus.Published())
+            .withVersion(policy.version() + 1);
         return commandPort.save(publishedPolicy);
     }
     

@@ -25,7 +25,7 @@ public class JpaWorkflowQueryAdapter implements WorkflowQueryPort {
     
     @Override
     public Optional<WorkflowDefinition> findById(WorkflowId id) {
-        return repository.findLatestByIdOrderByVersionDesc(id.value())
+        return repository.findFirstByIdOrderByVersionDesc(id.value())
             .map(DomainMapper::toWorkflowDomain);
     }
     

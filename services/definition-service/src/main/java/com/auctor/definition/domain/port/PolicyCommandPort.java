@@ -12,9 +12,4 @@ public interface PolicyCommandPort {
      * Save a policy definition.
      */
     PolicyDefinition save(PolicyDefinition policy);
-    
-    /**
-     * Publish a policy definition.
-     */
-    PolicyDefinition publish(PolicyId id);
 }

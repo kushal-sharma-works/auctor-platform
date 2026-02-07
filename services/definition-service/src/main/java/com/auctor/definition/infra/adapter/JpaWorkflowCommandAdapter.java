@@ -26,11 +26,4 @@ public class JpaWorkflowCommandAdapter implements WorkflowCommandPort {
         WorkflowJpaEntity saved = repository.save(entity);
         return DomainMapper.toWorkflowDomain(saved);
     }
-    
-    @Override
-    public WorkflowDefinition publish(WorkflowId id) {
-        // This method just delegates to save after status change
-        // The actual logic is in WorkflowService
-        throw new UnsupportedOperationException("Use WorkflowService.publish instead");
-    }
 }

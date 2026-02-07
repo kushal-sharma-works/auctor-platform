@@ -94,6 +94,138 @@ class PolicyControllerIT extends IntegrationTestBase {
             .andExpect(jsonPath("$.totalElements").exists());
     }
     
+    @Test
+    void shouldCreatePolicyWithMultipleConditions() throws Exception {
+        Map<String, Object> request = Map.of(
+            "name", "Multi-Condition Policy",
+            "conditions", List.of(
+                Map.of("field", "amount", "operator", "GT", "value", "100"),
+                Map.of("field", "status", "operator", "EQ", "value", "ACTIVE"),
+                Map.of("field", "country", "operator", "IN", "value", "USA,CANADA")
+            )
+        );
+        
+        mockMvc.perform(post("/api/v1/policies")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.conditions").isArray())
+            .andExpect(jsonPath("$.conditions.length()").value(3));
+    }
+    
+    @Test
+    void shouldRejectPolicyWithNullConditions() throws Exception {
+        Map<String, Object> request = Map.of("name", "Invalid Policy");
+        
+        mockMvc.perform(post("/api/v1/policies")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest());
+    }
+    
+    @Test
+    void shouldRejectPolicyWithInvalidOperator() throws Exception {
+        Map<String, Object> request = Map.of(
+            "name", "Invalid Operator Policy",
+            "conditions", List.of(
+                Map.of("field", "amount", "operator", "INVALID", "value", "100")
+            )
+        );
+        
+        mockMvc.perform(post("/api/v1/policies")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest());
+    }
+    
+    @Test
+    void shouldGetPolicyByIdAndVersion() throws Exception {
+        String id = createPolicyAndGetId();
+        
+        mockMvc.perform(get("/api/v1/policies/" + id + "/versions/1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(id))
+            .andExpect(jsonPath("$.version").value(1));
+    }
+    
+    @Test
+    void shouldReturn404ForNonExistentVersion() throws Exception {
+        String id = createPolicyAndGetId();
+        
+        mockMvc.perform(get("/api/v1/policies/" + id + "/versions/999"))
+            .andExpect(status().isNotFound());
+    }
+    
+    @Test
+    void shouldNotPublishAlreadyPublishedPolicy() throws Exception {
+        String id = createPolicyAndGetId();
+        
+        // Publish once
+        mockMvc.perform(post("/api/v1/policies/" + id + "/publish"))
+            .andExpect(status().isOk());
+        
+        // Try to publish again
+        mockMvc.perform(post("/api/v1/policies/" + id + "/publish"))
+            .andExpect(status().isBadRequest());
+    }
+    
+    @Test
+    void shouldHandleEmptyPaginationResult() throws Exception {
+        mockMvc.perform(get("/api/v1/policies")
+                .param("page", "999")
+                .param("size", "10"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content").isArray())
+            .andExpect(jsonPath("$.content").isEmpty());
+    }
+    
+    @Test
+    void shouldValidatePaginationParameters() throws Exception {
+        mockMvc.perform(get("/api/v1/policies")
+                .param("page", "0")
+                .param("size", "100"))
+            .andExpect(status().isOk());
+    }
+    
+    @Test
+    void shouldCreatePolicyWithAllOperatorTypes() throws Exception {
+        String[] operators = {"EQ", "NEQ", "GT", "LT", "GTE", "LTE", "IN", "NOT_IN"};
+        
+        for (String operator : operators) {
+            Map<String, Object> request = Map.of(
+                "name", "Policy with " + operator,
+                "conditions", List.of(
+                    Map.of("field", "field", "operator", operator, "value", "value")
+                )
+            );
+            
+            mockMvc.perform(post("/api/v1/policies")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.conditions[0].operator").value(operator));
+        }
+    }
+    
+    @Test
+    void shouldReturnProblemDetailForErrors() throws Exception {
+        mockMvc.perform(get("/api/v1/policies/non-existent-id"))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.type").exists())
+            .andExpect(jsonPath("$.title").exists())
+            .andExpect(jsonPath("$.detail").exists())
+            .andExpect(jsonPath("$.status").value(404));
+    }
+    
+    @Test
+    void shouldPreserveCreatedTimestamp() throws Exception {
+        String id = createPolicyAndGetId();
+        
+        mockMvc.perform(get("/api/v1/policies/" + id))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.createdAt").exists());
+    }
+    
     private String createPolicyAndGetId() throws Exception {
         Map<String, Object> request = Map.of(
             "name", "Test Policy",

@@ -70,8 +70,10 @@ public class WorkflowService {
             throw new IllegalArgumentException("Workflow must have at least one transition to publish");
         }
         
-        // Update status to PUBLISHED and save
-        WorkflowDefinition publishedWorkflow = workflow.withStatus(new WorkflowStatus.Published());
+        // Update status to PUBLISHED and save as a new version
+        WorkflowDefinition publishedWorkflow = workflow
+            .withStatus(new WorkflowStatus.Published())
+            .withVersion(workflow.version() + 1);
         return commandPort.save(publishedWorkflow);
     }
     

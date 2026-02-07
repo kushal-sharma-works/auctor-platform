@@ -23,8 +23,7 @@ public interface PolicyJpaRepository extends JpaRepository<PolicyJpaEntity, Poli
     /**
      * Find the latest version of a policy by ID.
      */
-    @Query("SELECT p FROM PolicyJpaEntity p WHERE p.id = :id ORDER BY p.version DESC LIMIT 1")
-    Optional<PolicyJpaEntity> findLatestByIdOrderByVersionDesc(@Param("id") String id);
+    Optional<PolicyJpaEntity> findFirstByIdOrderByVersionDesc(String id);
     
     /**
      * Find all policies (returns latest version per policy ID).

@@ -113,6 +113,140 @@ class WorkflowControllerIT extends IntegrationTestBase {
             .andExpect(jsonPath("$.totalElements").exists());
     }
     
+    @Test
+    void shouldCreateWorkflowWithComplexTransitions() throws Exception {
+        Map<String, Object> request = Map.of(
+            "name", "Complex Workflow",
+            "states", List.of("DRAFT", "REVIEW", "APPROVED", "REJECTED"),
+            "initialState", "DRAFT",
+            "transitions", List.of(
+                Map.of("fromState", "DRAFT", "toState", "REVIEW"),
+                Map.of("fromState", "REVIEW", "toState", "APPROVED", "guardExpression", "approved == true"),
+                Map.of("fromState", "REVIEW", "toState", "REJECTED", "policyRef", "approval-policy")
+            )
+        );
+        
+        mockMvc.perform(post("/api/v1/workflows")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.transitions").isArray())
+            .andExpect(jsonPath("$.transitions.length()").value(3));
+    }
+    
+    @Test
+    void shouldGetWorkflowByIdAndVersion() throws Exception {
+        String id = createWorkflowAndGetId();
+        
+        mockMvc.perform(get("/api/v1/workflows/" + id + "/versions/1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(id))
+            .andExpect(jsonPath("$.version").value(1));
+    }
+    
+    @Test
+    void shouldReturn404ForNonExistentVersion() throws Exception {
+        String id = createWorkflowAndGetId();
+        
+        mockMvc.perform(get("/api/v1/workflows/" + id + "/versions/999"))
+            .andExpect(status().isNotFound());
+    }
+    
+    @Test
+    void shouldRejectWorkflowWithEmptyStates() throws Exception {
+        Map<String, Object> request = Map.of(
+            "name", "Invalid Workflow",
+            "states", List.of(),
+            "initialState", "DRAFT",
+            "transitions", List.of()
+        );
+        
+        mockMvc.perform(post("/api/v1/workflows")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest());
+    }
+    
+    @Test
+    void shouldRejectWorkflowWithNullTransitions() throws Exception {
+        Map<String, Object> request = Map.of(
+            "name", "Invalid Workflow",
+            "states", List.of("START", "END"),
+            "initialState", "START"
+        );
+        
+        mockMvc.perform(post("/api/v1/workflows")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest());
+    }
+    
+    @Test
+    void shouldCreateWorkflowWithPolicyReference() throws Exception {
+        Map<String, Object> request = Map.of(
+            "name", "Workflow with Policy",
+            "states", List.of("START", "END"),
+            "initialState", "START",
+            "transitions", List.of(
+                Map.of("fromState", "START", "toState", "END", "policyRef", "policy-123")
+            )
+        );
+        
+        mockMvc.perform(post("/api/v1/workflows")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.transitions[0].policyRef").value("policy-123"));
+    }
+    
+    @Test
+    void shouldCreateWorkflowWithGuardExpression() throws Exception {
+        Map<String, Object> request = Map.of(
+            "name", "Workflow with Guard",
+            "states", List.of("START", "END"),
+            "initialState", "START",
+            "transitions", List.of(
+                Map.of("fromState", "START", "toState", "END", "guardExpression", "amount > 1000")
+            )
+        );
+        
+        mockMvc.perform(post("/api/v1/workflows")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.transitions[0].guardExpression").value("amount > 1000"));
+    }
+    
+    @Test
+    void shouldHandleEmptyPaginationResult() throws Exception {
+        mockMvc.perform(get("/api/v1/workflows")
+                .param("page", "999")
+                .param("size", "10"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content").isArray())
+            .andExpect(jsonPath("$.content").isEmpty());
+    }
+    
+    @Test
+    void shouldPreserveTimestamps() throws Exception {
+        String id = createWorkflowAndGetId();
+        
+        mockMvc.perform(get("/api/v1/workflows/" + id))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.createdAt").exists())
+            .andExpect(jsonPath("$.updatedAt").exists());
+    }
+    
+    @Test
+    void shouldReturnProblemDetailForErrors() throws Exception {
+        mockMvc.perform(get("/api/v1/workflows/non-existent-id"))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.type").exists())
+            .andExpect(jsonPath("$.title").exists())
+            .andExpect(jsonPath("$.detail").exists())
+            .andExpect(jsonPath("$.status").value(404));
+    }
+    
     private String createWorkflowAndGetId() throws Exception {
         Map<String, Object> request = Map.of(
             "name", "Test Workflow",
