@@ -18,6 +18,12 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379" # Maps host port 6379 to container port 6379
+
+      
   definition-service:
     build: ./services/definition-service
     ports:

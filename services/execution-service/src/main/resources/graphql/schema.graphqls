@@ -1,0 +1,10 @@
+# schema.graphqls
+type Query {
+  getDefinition(id: ID!): Definition
+}
+
+type Definition {
+  id: ID!
+  name: String!
+  description: String
+}

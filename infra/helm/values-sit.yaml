@@ -1,0 +1,15 @@
+replicaCount: 2
+environment: sit
+logLevel: INFO
+
+ingress:
+  host: "auctor-sit.local"
+  enabled: true
+
+resources:
+  limits:
+    cpu: "750m"
+    memory: "768Mi"
+  requests:
+    cpu: "500m"
+    memory: "512Mi"

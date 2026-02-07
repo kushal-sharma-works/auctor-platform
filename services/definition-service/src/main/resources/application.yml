@@ -35,3 +35,38 @@ logging:
     net.devh.boot.grpc: DEBUG
     io.grpc: DEBUG
     root: INFO
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  metrics:
+    tags:
+      service: definition-service
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+
+# OpenTelemetry configuration
+# Using 'logging' exporter for development (traces go to console)
+# To send traces to a collector, change to:
+#   traces:
+#     exporter: otlp
+#   exporter:
+#     otlp:
+#       endpoint: http://localhost:4317
+otel:
+  sdk:
+    disabled: false
+  traces:
+    exporter: logging
+  logs:
+    exporter: none
+  metrics:
+    exporter: none
+  resource:
+    attributes:
+      service.name: definition-service

@@ -1,0 +1,17 @@
+image:
+  registry: "acr.azurecr.io"  # Update with your Azure Container Registry
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+  requests:
+    cpu: "250m"
+    memory: "256Mi"
+ingress:
+  host: "auctor.example.com"  # Update with your domain
+  enabled: true

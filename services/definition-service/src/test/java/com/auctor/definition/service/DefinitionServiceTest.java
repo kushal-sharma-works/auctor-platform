@@ -3,6 +3,8 @@ package com.auctor.definition.domain.service;
 import com.auctor.definition.domain.model.Definition;
 import com.auctor.definition.domain.model.DefinitionId;
 import com.auctor.definition.domain.port.DefinitionQueryPort;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -20,13 +22,16 @@ class DefinitionServiceTest {
 
     @Mock
     private DefinitionQueryPort queryPort;
+    
+    private MeterRegistry meterRegistry;
 
     private DefinitionService service;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new DefinitionService(queryPort);
+        meterRegistry = new SimpleMeterRegistry();
+        service = new DefinitionService(queryPort, meterRegistry);
     }
 
     @Test

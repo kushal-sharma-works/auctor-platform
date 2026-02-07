@@ -1,0 +1,39 @@
+name: CI
+
+on: 
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend services
+        run: |
+          mvn -f services/definition-service clean package -DskipTests
+          ./gradlew -p services/execution-service build -x test
+
+      - name: Build backend tests
+        run: |
+          mvn -f services/definition-service test
+          ./gradlew -p services/execution-service test
+
+      - name: Build frontend
+        run: |
+          cd web
+          npm ci
+          npm run build
+          npm test
+
+      - name: Build Docker images
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker build -t definition-service:latest -f infra/dockerfile/definition-service.dockerfile services/definition-service
+          docker build -t execution-service:latest -f infra/dockerfile/execution-service.dockerfile services/execution-service
+          docker build -t web:latest -f web/Dockerfile web

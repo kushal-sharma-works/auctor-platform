@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: definition-service
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: definition-service
+  template:
+    metadata:
+      labels:
+        app: definition-service
+    spec:
+      containers:
+        - name: definition
+          image: "{{ .Values.image.registry }}/definition-service:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: 8081
+              name: tomcat
+            - containerPort: 9090
+              name: grpc
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 20
+            periodSeconds: 10

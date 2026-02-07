@@ -37,16 +37,16 @@ class DefinitionClientTest {
             .directExecutor()
             .build()
 
-        val client = DefinitionGrpcClient(channel)
+        val client = DefinitionGrpcClient(channel = channel)
 
         try {
             val response = runBlocking {
                 client.getDefinition("123")
             }
 
-            assertEquals("123", response.id)
-            assertEquals("sample-definition", response.name)
-            assertEquals("stored in database", response.description)
+            assertEquals("123", response?.id)
+            assertEquals("sample-definition", response?.name)
+            assertEquals("stored in database", response?.description)
         } finally {
             client.close()
             server.shutdownNow()

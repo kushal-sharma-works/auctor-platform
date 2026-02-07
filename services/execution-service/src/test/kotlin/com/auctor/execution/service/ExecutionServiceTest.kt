@@ -1,6 +1,7 @@
 package com.auctor.execution.service
 
 import com.auctor.execution.grpc.DefinitionGrpcClient
+import com.auctor.execution.grpc.DefinitionDto
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
@@ -16,11 +17,11 @@ class ExecutionServiceTest {
     @Test
     fun `execute returns mapped result`() = runBlocking {
         whenever(grpcClient.getDefinition("123")).thenReturn(
-            GetDefinitionResponse.newBuilder()
-                .setId("123")
-                .setName("test")
-                .setDescription("desc")
-                .build()
+            DefinitionDto(
+                id = "123",
+                name = "test",
+                description = "desc"
+            )
         )
 
         val result = service.execute("123")
