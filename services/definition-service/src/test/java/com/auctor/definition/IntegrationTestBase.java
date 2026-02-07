@@ -14,7 +14,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /**
  * Base class for integration tests with Testcontainers.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
 @Testcontainers
 @AutoConfigureMockMvc

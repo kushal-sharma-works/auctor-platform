@@ -57,7 +57,10 @@ class WorkflowRepositoryIT extends IntegrationTestBase {
         
         Page<WorkflowJpaEntity> page = repository.findAllLatestVersions(PageRequest.of(0, 10));
         
-        assertTrue(page.getTotalElements() >= 2);
+        assertTrue(page.getContent().stream()
+            .anyMatch(w -> w.getId().equals("test-workflow-3")));
+        assertTrue(page.getContent().stream()
+            .anyMatch(w -> w.getId().equals("test-workflow-4")));
     }
     
     private WorkflowDefinition createWorkflow(String id) {

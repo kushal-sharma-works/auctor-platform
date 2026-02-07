@@ -1,0 +1,31 @@
+{
+  "request": {
+    "name": "06-get-policy-version-1",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/policies/3f00a73a-eeb1-444e-99cf-986e953271d9/versions/1",
+    "timestamp": "Sat Feb  7 12:32:05 UTC 2026",
+    "body": null
+  },
+  "response": {
+    "status": "200",
+    "body": {
+      "id": "3f00a73a-eeb1-444e-99cf-986e953271d9",
+      "name": "High Value Order Policy",
+      "version": 1,
+      "status": "DRAFT",
+      "conditions": [
+        {
+          "field": "amount",
+          "operator": "GT",
+          "value": "1000"
+        },
+        {
+          "field": "customerType",
+          "operator": "EQ",
+          "value": "PREMIUM"
+        }
+      ],
+      "createdAt": "2026-02-07T12:32:04.908881Z"
+    }
+  }
+}

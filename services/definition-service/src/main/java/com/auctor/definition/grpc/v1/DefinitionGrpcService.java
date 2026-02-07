@@ -8,6 +8,8 @@ import com.auctor.definition.domain.service.WorkflowService;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +19,8 @@ import java.util.Map;
  */
 @GrpcService
 public class DefinitionGrpcService extends DefinitionServiceGrpc.DefinitionServiceImplBase {
+    
+    private static final Logger logger = LoggerFactory.getLogger(DefinitionGrpcService.class);
     
     private final WorkflowService workflowService;
     private final PolicyService policyService;
@@ -69,11 +73,17 @@ public class DefinitionGrpcService extends DefinitionServiceGrpc.DefinitionServi
             
         } catch (EntityNotFoundException e) {
             responseObserver.onError(
-                Status.NOT_FOUND.withDescription(e.getMessage()).asException()
+                Status.NOT_FOUND.withDescription("Workflow not found").asException()
+            );
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid argument in getWorkflow: {}", e.getMessage());
+            responseObserver.onError(
+                Status.INVALID_ARGUMENT.withDescription("Invalid request").asException()
             );
         } catch (Exception e) {
+            logger.error("Internal error in getWorkflow", e);
             responseObserver.onError(
-                Status.INTERNAL.withDescription("Internal error: " + e.getMessage()).asException()
+                Status.INTERNAL.withDescription("Internal server error").asException()
             );
         }
     }
@@ -110,11 +120,17 @@ public class DefinitionGrpcService extends DefinitionServiceGrpc.DefinitionServi
             
         } catch (EntityNotFoundException e) {
             responseObserver.onError(
-                Status.NOT_FOUND.withDescription(e.getMessage()).asException()
+                Status.NOT_FOUND.withDescription("Policy not found").asException()
+            );
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid argument in getPolicy: {}", e.getMessage());
+            responseObserver.onError(
+                Status.INVALID_ARGUMENT.withDescription("Invalid request").asException()
             );
         } catch (Exception e) {
+            logger.error("Internal error in getPolicy", e);
             responseObserver.onError(
-                Status.INTERNAL.withDescription("Internal error: " + e.getMessage()).asException()
+                Status.INTERNAL.withDescription("Internal server error").asException()
             );
         }
     }
@@ -144,11 +160,17 @@ public class DefinitionGrpcService extends DefinitionServiceGrpc.DefinitionServi
             
         } catch (EntityNotFoundException e) {
             responseObserver.onError(
-                Status.NOT_FOUND.withDescription(e.getMessage()).asException()
+                Status.NOT_FOUND.withDescription("Policy not found").asException()
+            );
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid argument in evaluatePolicy: {}", e.getMessage());
+            responseObserver.onError(
+                Status.INVALID_ARGUMENT.withDescription("Invalid request").asException()
             );
         } catch (Exception e) {
+            logger.error("Internal error in evaluatePolicy", e);
             responseObserver.onError(
-                Status.INTERNAL.withDescription("Internal error: " + e.getMessage()).asException()
+                Status.INTERNAL.withDescription("Internal server error").asException()
             );
         }
     }

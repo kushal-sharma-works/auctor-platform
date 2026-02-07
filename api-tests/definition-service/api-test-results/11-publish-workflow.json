@@ -1,0 +1,54 @@
+{
+  "request": {
+    "name": "11-publish-workflow",
+    "method": "POST",
+    "url": "http://localhost:8081/api/v1/workflows/d3d53d36-0ca4-4751-9615-f27c1603f058/publish",
+    "timestamp": "Sat Feb  7 12:32:05 UTC 2026",
+    "body": null
+  },
+  "response": {
+    "status": "200",
+    "body": {
+      "id": "d3d53d36-0ca4-4751-9615-f27c1603f058",
+      "name": "Order Approval Workflow",
+      "version": 2,
+      "status": "PUBLISHED",
+      "states": [
+        "PENDING",
+        "REVIEWING",
+        "APPROVED",
+        "REJECTED",
+        "COMPLETED"
+      ],
+      "initialState": "PENDING",
+      "transitions": [
+        {
+          "fromState": "PENDING",
+          "toState": "REVIEWING",
+          "policyRef": null,
+          "guardExpression": "amount < 10000"
+        },
+        {
+          "fromState": "REVIEWING",
+          "toState": "APPROVED",
+          "policyRef": "3f00a73a-eeb1-444e-99cf-986e953271d9",
+          "guardExpression": "approverCount >= 1"
+        },
+        {
+          "fromState": "REVIEWING",
+          "toState": "REJECTED",
+          "policyRef": null,
+          "guardExpression": "!approved"
+        },
+        {
+          "fromState": "APPROVED",
+          "toState": "COMPLETED",
+          "policyRef": "0941f7f7-f1fe-4e94-9845-60574e351923",
+          "guardExpression": null
+        }
+      ],
+      "createdAt": "2026-02-07T12:32:05.531161Z",
+      "updatedAt": "2026-02-07T12:32:05.880429125Z"
+    }
+  }
+}
