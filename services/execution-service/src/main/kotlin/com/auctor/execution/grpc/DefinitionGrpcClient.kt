@@ -201,7 +201,6 @@ class DefinitionGrpcClient : AutoCloseable {
                 // Don't retry on NOT_FOUND or INVALID_ARGUMENT
                 if (e.status.code == Status.Code.NOT_FOUND || 
                     e.status.code == Status.Code.INVALID_ARGUMENT) {
-                    recordFailure()
                     throw e
                 }
                 

@@ -19,6 +19,7 @@ fun Application.configureAuth() {
                 val roles = credential.payload
                     .getClaim("roles")
                     .asList(String::class.java)
+                    ?: emptyList()
                 
                 if (roles.contains("EXECUTOR")) {
                     JWTPrincipal(credential.payload)

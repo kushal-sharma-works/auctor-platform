@@ -26,14 +26,6 @@ data class StartExecutionRequest(
     val input: Map<String, String>
 )
 
-/**
- * Request to advance execution to next state.
- */
-@Serializable
-data class AdvanceExecutionRequest(
-    val actor: String = "user"
-)
-
 @Serializable
 data class ExecutionStatusResponse(
     val state: String,
@@ -73,12 +65,7 @@ fun Route.executionRoutes(executionEngine: ExecutionEngine) {
     
     // Readiness check
     get("/ready") {
-        try {
-            call.respondText("READY", ContentType.Text.Plain, HttpStatusCode.OK)
-        } catch (e: Exception) {
-            logger.error("Readiness check failed", e)
-            call.respondText("NOT READY", ContentType.Text.Plain, HttpStatusCode.ServiceUnavailable)
-        }
+        call.respondText("READY", ContentType.Text.Plain, HttpStatusCode.OK)
     }
     
     route("/api/v1/executions") {
@@ -200,7 +187,6 @@ fun Route.executionRoutes(executionEngine: ExecutionEngine) {
             post("/{id}/advance") {
                 try {
                     val id = call.parameters["id"] ?: throw IllegalArgumentException("Missing id parameter")
-                    val request = call.receiveNullable<AdvanceExecutionRequest>()
                     val authHeader = call.request.headers["Authorization"]
                     val actor = actorFromPrincipal(call)
                     

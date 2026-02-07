@@ -63,6 +63,9 @@ fun Application.module(
     // Status pages for error handling
     install(StatusPages) {
         exception<Throwable> { call, cause ->
+            if (cause is kotlinx.coroutines.CancellationException) {
+                throw cause
+            }
             logger.error("Unhandled exception", cause)
             call.respond(
                 HttpStatusCode.InternalServerError,
