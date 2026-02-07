@@ -26,6 +26,14 @@ data class StartExecutionRequest(
     val input: Map<String, String>
 )
 
+/**
+ * Optional request body for advance endpoint to provide correlationId for tracing.
+ */
+@Serializable
+data class AdvanceRequest(
+    val correlationId: String? = null
+)
+
 @Serializable
 data class ExecutionStatusResponse(
     val state: String,
@@ -190,10 +198,13 @@ fun Route.executionRoutes(executionEngine: ExecutionEngine) {
                     val authHeader = call.request.headers["Authorization"]
                     val actor = actorFromPrincipal(call)
                     
+                    // Accept optional request body with correlationId for tracing
+                    val requestBody = call.receiveNullable<AdvanceRequest>()
+                    
                     val stateTransitionRequest = StateTransitionRequest(
                         executionId = ExecutionId(id),
                         actor = actor,
-                        correlationId = UUID.randomUUID().toString()
+                        correlationId = requestBody?.correlationId ?: UUID.randomUUID().toString()
                     )
                     
                     val execution = executionEngine.advanceExecution(stateTransitionRequest, authHeader)

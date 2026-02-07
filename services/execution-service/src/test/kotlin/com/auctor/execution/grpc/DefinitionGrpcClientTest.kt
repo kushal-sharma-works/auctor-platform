@@ -172,9 +172,9 @@ class DefinitionGrpcClientTest {
                     )
                 }
                 "wf-slow" -> {
-                    Thread.sleep(2000) // Simulate slow response
+                    // Simulate slow response asynchronously without blocking
                     responseObserver.onError(
-                        StatusRuntimeException(Status.DEADLINE_EXCEEDED)
+                        StatusRuntimeException(Status.DEADLINE_EXCEEDED.withDescription("Request timeout"))
                     )
                 }
                 "wf-retry" -> {

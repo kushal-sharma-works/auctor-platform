@@ -2,14 +2,14 @@
   "request": {
     "name": "04-get-execution",
     "method": "GET",
-    "url": "http://localhost:8082/api/v1/executions/exec-c109f6a7-e0fd-4123-ae59-611bfee44161",
-    "timestamp": "Sat Feb  7 20:20:46 UTC 2026",
+    "url": "http://localhost:8082/api/v1/executions/exec-4b56fc0f-22fe-497f-b936-cde3875139de",
+    "timestamp": "Sat Feb  7 20:37:25 UTC 2026",
     "body": null
   },
   "response": {
     "status": "200",
     "body": {
-      "id": "exec-c109f6a7-e0fd-4123-ae59-611bfee44161",
+      "id": "exec-4b56fc0f-22fe-497f-b936-cde3875139de",
       "workflowId": "8c9f959c-c8c5-4b38-90ef-e82a2d647893",
       "workflowVersion": 2,
       "currentState": "PENDING",
@@ -21,8 +21,8 @@
         "amount": "1500",
         "customerType": "PREMIUM"
       },
-      "createdAt": "2026-02-07T20:20:46.423909Z",
-      "updatedAt": "2026-02-07T20:20:46.423909Z"
+      "createdAt": "2026-02-07T20:37:25.245252Z",
+      "updatedAt": "2026-02-07T20:37:25.245252Z"
     }
   }
 }

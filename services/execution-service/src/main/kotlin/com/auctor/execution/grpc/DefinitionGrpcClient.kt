@@ -194,6 +194,9 @@ class DefinitionGrpcClient : AutoCloseable {
                 val result = block()
                 recordSuccess()
                 return result
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                // Preserve structured concurrency semantics
+                throw e
             } catch (e: StatusRuntimeException) {
                 lastException = e
                 logger.warn("$operation attempt $attempt/$maxAttempts failed: ${e.status}")

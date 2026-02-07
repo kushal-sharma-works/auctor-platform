@@ -30,6 +30,7 @@ class ExposedAuditRepository : AuditRepository {
             it[actor] = event.actor
             it[correlationId] = event.correlationId
         }
+        Unit
     }
     
     override suspend fun findByExecutionId(executionId: String): List<AuditEvent> = dbQuery {

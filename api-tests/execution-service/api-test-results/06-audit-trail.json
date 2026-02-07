@@ -2,33 +2,33 @@
   "request": {
     "name": "06-audit-trail",
     "method": "GET",
-    "url": "http://localhost:8082/api/v1/executions/exec-c109f6a7-e0fd-4123-ae59-611bfee44161/audit",
-    "timestamp": "Sat Feb  7 20:20:46 UTC 2026",
+    "url": "http://localhost:8082/api/v1/executions/exec-4b56fc0f-22fe-497f-b936-cde3875139de/audit",
+    "timestamp": "Sat Feb  7 20:37:25 UTC 2026",
     "body": null
   },
   "response": {
     "status": "200",
     "body": [
       {
-        "id": "audit-8a4a45b3-ae6b-4af4-a75e-e4a9b6e4e268",
-        "executionId": "exec-c109f6a7-e0fd-4123-ae59-611bfee44161",
-        "timestamp": "2026-02-07T20:20:46.423909Z",
+        "id": "audit-5008367d-a9cb-479a-b702-d6ab2743ddd3",
+        "executionId": "exec-4b56fc0f-22fe-497f-b936-cde3875139de",
+        "timestamp": "2026-02-07T20:37:25.245252Z",
         "eventType": "EXECUTION_STARTED",
         "toState": "PENDING",
         "explanation": "Execution started for workflow Order Approval Workflow v2",
         "actor": "test-user",
-        "correlationId": "95606c70-6955-490e-a52b-5f6cf71bf2fe"
+        "correlationId": "550d02ab-ada0-4f17-9102-b720109045ac"
       },
       {
-        "id": "audit-c688e3a0-d7a5-4cb3-ac1b-db2c70f0b932",
-        "executionId": "exec-c109f6a7-e0fd-4123-ae59-611bfee44161",
-        "timestamp": "2026-02-07T20:20:46.623903Z",
+        "id": "audit-fe2a8bb7-b814-41c7-965b-2787d7783647",
+        "executionId": "exec-4b56fc0f-22fe-497f-b936-cde3875139de",
+        "timestamp": "2026-02-07T20:37:25.550399Z",
         "eventType": "STATE_TRANSITION",
         "fromState": "PENDING",
         "toState": "REVIEWING",
         "explanation": "Transitioned from PENDING to REVIEWING",
         "actor": "test-user",
-        "correlationId": "41a40a45-4a5e-4f21-8d35-80cd6f12b352"
+        "correlationId": "85de369d-ae74-4a3f-98af-d4e58a18bc64"
       }
     ]
   }
