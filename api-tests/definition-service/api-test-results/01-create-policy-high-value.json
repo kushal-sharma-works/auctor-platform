@@ -3,7 +3,7 @@
     "name": "01-create-policy-high-value",
     "method": "POST",
     "url": "http://localhost:8081/api/v1/policies",
-    "timestamp": "Sat Feb  7 12:37:52 UTC 2026",
+    "timestamp": "Sat Feb  7 18:27:16 UTC 2026",
     "body": {
       "name": "High Value Order Policy",
       "conditions": [
@@ -23,7 +23,7 @@
   "response": {
     "status": "201",
     "body": {
-      "id": "2cece933-5280-4811-896d-e09545e8117c",
+      "id": "c77d715e-5cfa-4ba6-9f33-d27ed5a2816a",
       "name": "High Value Order Policy",
       "version": 1,
       "status": "DRAFT",
@@ -39,7 +39,7 @@
           "value": "PREMIUM"
         }
       ],
-      "createdAt": "2026-02-07T12:37:52.192052997Z"
+      "createdAt": "2026-02-07T18:27:16.073641545Z"
     }
   }
 }

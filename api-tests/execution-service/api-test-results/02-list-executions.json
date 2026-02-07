@@ -1,0 +1,30 @@
+{
+  "request": {
+    "name": "02-list-executions",
+    "method": "GET",
+    "url": "http://localhost:8082/api/v1/executions?limit=20&offset=0",
+    "timestamp": "Sat Feb  7 18:34:21 UTC 2026",
+    "body": null
+  },
+  "response": {
+    "status": "200",
+    "body": [
+      {
+        "id": "exec-sample-001",
+        "workflowId": "wf-order-approval",
+        "workflowVersion": 1,
+        "currentState": "pending",
+        "status": {
+          "type": "com.auctor.execution.domain.ExecutionStatus.Running"
+        },
+        "input": {
+          "amount": "5000",
+          "country": "US",
+          "userId": "user-001"
+        },
+        "createdAt": "2026-02-07T18:31:45.240651Z",
+        "updatedAt": "2026-02-07T18:31:45.240651Z"
+      }
+    ]
+  }
+}

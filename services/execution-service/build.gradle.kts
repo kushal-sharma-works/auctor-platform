@@ -28,6 +28,8 @@ dependencies {
     implementation("io.ktor:ktor-server-netty-jvm:3.0.0")
     implementation("io.ktor:ktor-server-content-negotiation-jvm:3.0.0")
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:3.0.0")
+    implementation("io.ktor:ktor-server-call-logging-jvm:3.0.0")
+    implementation("io.ktor:ktor-server-status-pages-jvm:3.0.0")
 
     // Logging
     implementation("ch.qos.logback:logback-classic:1.5.6")
@@ -47,11 +49,24 @@ dependencies {
     implementation("io.ktor:ktor-server-auth-jwt-jvm:3.0.0")
     implementation("com.auth0:java-jwt:4.4.0")
 
-    // GraphQL
+    // GraphQL (graphql-java only, not KGraphQL)
     implementation("com.graphql-java:graphql-java:21.5")
-    implementation("com.apurebase:kgraphql:0.19.0")
-    implementation("com.apurebase:kgraphql-ktor:0.19.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.8.1")
+    
+    // Exposed (JetBrains SQL framework)
+    implementation("org.jetbrains.exposed:exposed-core:0.50.1")
+    implementation("org.jetbrains.exposed:exposed-dao:0.50.1")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.50.1")
+    implementation("org.jetbrains.exposed:exposed-java-time:0.50.1")
+    implementation("org.jetbrains.exposed:exposed-json:0.50.1")
+    
+    // Database
+    implementation("org.postgresql:postgresql:42.7.3")
+    implementation("com.zaxxer:HikariCP:5.1.0")
+    
+    // Flyway
+    implementation("org.flywaydb:flyway-core:10.13.0")
+    implementation("org.flywaydb:flyway-database-postgresql:10.13.0")
     
     // Caching
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
@@ -72,10 +87,8 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testImplementation("io.ktor:ktor-server-test-host-jvm:3.0.0")
     testImplementation("io.grpc:grpc-inprocess:1.63.0")
-    testImplementation("org.testcontainers:testcontainers:1.19.8")
-    testImplementation("org.testcontainers:postgresql:1.19.8")
-    testImplementation("org.testcontainers:junit-jupiter:1.19.8")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
 
 }
 
@@ -85,7 +98,6 @@ tasks.withType<Jar> {
     }
 }
 
-// ADD THIS BLOCK - This is the only addition
 tasks.test {
     useJUnitPlatform()
 }

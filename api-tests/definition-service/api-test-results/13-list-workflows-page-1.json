@@ -3,7 +3,7 @@
     "name": "13-list-workflows-page-1",
     "method": "GET",
     "url": "http://localhost:8081/api/v1/workflows?page=1&size=5",
-    "timestamp": "Sat Feb  7 12:37:53 UTC 2026",
+    "timestamp": "Sat Feb  7 18:27:17 UTC 2026",
     "body": null
   },
   "response": {
@@ -162,26 +162,26 @@
         "pageNumber": 1,
         "pageSize": 5,
         "sort": {
-          "empty": true,
           "sorted": false,
+          "empty": true,
           "unsorted": true
         },
         "offset": 5,
         "paged": true,
         "unpaged": false
       },
-      "totalPages": 3,
-      "totalElements": 15,
       "last": false,
+      "totalPages": 4,
+      "totalElements": 17,
+      "first": false,
       "size": 5,
       "number": 1,
-      "numberOfElements": 5,
       "sort": {
-        "empty": true,
         "sorted": false,
+        "empty": true,
         "unsorted": true
       },
-      "first": false,
+      "numberOfElements": 5,
       "empty": false
     }
   }

@@ -1,0 +1,36 @@
+{
+  "request": {
+    "name": "03-start-execution",
+    "method": "POST",
+    "url": "http://localhost:8082/api/v1/executions",
+    "timestamp": "Sat Feb  7 18:34:22 UTC 2026",
+    "body": {
+      "workflowId": "8e09d574-9533-4694-b93b-432d9f3aba58",
+      "workflowVersion": 2,
+      "input": {
+        "orderId": "order-001",
+        "amount": "1500",
+        "customerType": "PREMIUM"
+      }
+    }
+  },
+  "response": {
+    "status": "201",
+    "body": {
+      "id": "exec-448b5b28-e1c0-4845-bfaa-baf22ef5dd71",
+      "workflowId": "8e09d574-9533-4694-b93b-432d9f3aba58",
+      "workflowVersion": 2,
+      "currentState": "PENDING",
+      "status": {
+        "type": "com.auctor.execution.domain.ExecutionStatus.Running"
+      },
+      "input": {
+        "orderId": "order-001",
+        "amount": "1500",
+        "customerType": "PREMIUM"
+      },
+      "createdAt": "2026-02-07T18:34:22.039380901Z",
+      "updatedAt": "2026-02-07T18:34:22.039380901Z"
+    }
+  }
+}

@@ -15,7 +15,12 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.Json
 
-fun Route.installGraphQlRoutes(cacheService: CacheService) {
+fun Route.installGraphQlRoutes(cacheService: CacheService?) {
+    // If cache service is not available, skip GraphQL setup
+    if (cacheService == null) {
+        return
+    }
+    
     val gqlProvider = GraphQLProvider(cacheService)
 
     // Explicit OPTIONS for CORS preflight

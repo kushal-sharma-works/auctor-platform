@@ -1,0 +1,13 @@
+{
+  "request": {
+    "name": "01-readiness-check",
+    "method": "GET",
+    "url": "http://localhost:8082/ready",
+    "timestamp": "Sat Feb  7 18:34:21 UTC 2026",
+    "body": null
+  },
+  "response": {
+    "status": "200",
+    "body": "READY"
+  }
+}

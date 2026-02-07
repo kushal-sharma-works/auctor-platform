@@ -1,7 +1,6 @@
 package com.auctor.execution.cache
 
 import com.auctor.execution.grpc.DefinitionGrpcClient
-import com.auctor.execution.grpc.DefinitionDto
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.lettuce.core.RedisClient
@@ -11,17 +10,9 @@ import kotlinx.coroutines.withContext
 import java.time.Duration
 
 /**
- * CacheService implements two-level caching:
+ * CacheService implements two-level caching for gRPC-based definition lookups:
  *  - L1: Caffeine in-process cache (fast, per-instance)
  *  - L2: Redis (shared across instances)
- *
- * getOrLoad will:
- *  1) try L1
- *  2) if miss, try L2
- *  3) if miss, call DefinitionGrpcClient (passing auth token if available)
- *  4) populate L2 and L1 before returning
- *
- * TTLs: configurable constants below.
  */
 class CacheService(
     private val grpcClient: DefinitionGrpcClient,
@@ -31,7 +22,7 @@ class CacheService(
     private val l1Cache = Caffeine.newBuilder()
         .maximumSize(10_000)
         .expireAfterWrite(Duration.ofMinutes(5))
-        .build<String, DefinitionDto?>()
+        .build<String, Map<String, Any>?>()
 
     private val redisClient = RedisClient.create(redisUrl)
     private val redisConn = redisClient.connect()
@@ -40,42 +31,63 @@ class CacheService(
 
     private val L2_TTL_SECONDS = 300L // 5 minutes
 
-    suspend fun getOrLoad(id: String, authHeader: String? = null): DefinitionDto? {
+    suspend fun getWorkflowCached(id: String, version: Int, authHeader: String? = null): Map<String, Any>? {
+        val cacheKey = "workflow:$id:$version"
+        
         // 1) L1
-        l1Cache.getIfPresent(id)?.let { return it }
+        l1Cache.getIfPresent(cacheKey)?.let { return it }
 
         // 2) L2 (Redis)
         val fromL2 = withContext(Dispatchers.IO) {
             try {
-                val stored = redisCommands.get(id).await() // returns String?
+                val stored = redisCommands.get(cacheKey).await()
                 stored?.let {
-                    mapper.readValue(it, DefinitionDto::class.java)
+                    @Suppress("UNCHECKED_CAST")
+                    mapper.readValue(it, Map::class.java) as? Map<String, Any>
                 }
             } catch (e: Exception) {
                 null
             }
         }
         if (fromL2 != null) {
-            l1Cache.put(id, fromL2)
+            l1Cache.put(cacheKey, fromL2)
             return fromL2
         }
 
         // 3) Load from gRPC
-        val loaded = grpcClient.getDefinition(id, authHeader)
+        val loaded = grpcClient.getWorkflow(id, version, authHeader)
         if (loaded != null) {
+            val result = mapOf(
+                "id" to loaded.id,
+                "name" to loaded.name,
+                "version" to loaded.version,
+                "status" to loaded.status,
+                "states" to loaded.states,
+                "initialState" to loaded.initialState,
+                "transitions" to loaded.transitions.map {
+                    mapOf(
+                        "fromState" to it.fromState,
+                        "toState" to it.toState,
+                        "policyRef" to it.policyRef
+                    )
+                }
+            )
+            
             // store in L2
             try {
-                val json = mapper.writeValueAsString(loaded)
-                // set with TTL
-                redisCommands.setex(id, L2_TTL_SECONDS, json).await()
+                val json = mapper.writeValueAsString(result)
+                redisCommands.setex(cacheKey, L2_TTL_SECONDS, json).await()
             } catch (e: Exception) {
-                // log and continue (don't fail on Redis set)
+                // log and continue
             }
+            
             // store in L1
-            l1Cache.put(id, loaded)
+            l1Cache.put(cacheKey, result)
+            
+            return result
         }
 
-        return loaded
+        return null
     }
 
     override fun close() {
