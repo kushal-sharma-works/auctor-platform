@@ -43,7 +43,7 @@ public class JpaWorkflowQueryAdapter implements WorkflowQueryPort {
     
     @Override
     public Optional<WorkflowDefinition> findLatestPublished(WorkflowId id) {
-        return repository.findLatestPublishedById(id.value())
+        return repository.findFirstByIdAndStatusOrderByVersionDesc(id.value(), "PUBLISHED")
             .map(DomainMapper::toWorkflowDomain);
     }
 }

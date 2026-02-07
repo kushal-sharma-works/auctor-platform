@@ -3,7 +3,7 @@
     "name": "08-create-workflow-simple",
     "method": "POST",
     "url": "http://localhost:8081/api/v1/workflows",
-    "timestamp": "Sat Feb  7 12:32:05 UTC 2026",
+    "timestamp": "Sat Feb  7 12:37:52 UTC 2026",
     "body": {
       "name": "Simple Two-State Workflow",
       "states": [
@@ -23,7 +23,7 @@
   "response": {
     "status": "201",
     "body": {
-      "id": "ca8b4a46-33a9-4f88-86b6-9fd9fabdfd69",
+      "id": "c848e07b-abcc-410a-a802-d66b26f9faf8",
       "name": "Simple Two-State Workflow",
       "version": 1,
       "status": "DRAFT",
@@ -40,8 +40,8 @@
           "guardExpression": "completed == true"
         }
       ],
-      "createdAt": "2026-02-07T12:32:05.630018703Z",
-      "updatedAt": "2026-02-07T12:32:05.630018703Z"
+      "createdAt": "2026-02-07T12:37:52.685692598Z",
+      "updatedAt": "2026-02-07T12:37:52.685692598Z"
     }
   }
 }
