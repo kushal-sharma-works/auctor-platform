@@ -23,10 +23,11 @@ class DefinitionGrpcClientTest {
     private lateinit var server: Server
     private lateinit var channel: ManagedChannel
     private lateinit var client: DefinitionGrpcClient
-    private val serverName = "test-server"
+    private lateinit var serverName: String
 
     @BeforeEach
     fun setup() {
+        serverName = java.util.UUID.randomUUID().toString()
         // Create in-process server for testing
         val service = MockDefinitionService()
         server = InProcessServerBuilder.forName(serverName)

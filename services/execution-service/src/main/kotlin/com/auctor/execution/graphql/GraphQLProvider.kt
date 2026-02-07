@@ -1,6 +1,7 @@
 package com.auctor.execution.graphql
 
 import com.auctor.execution.cache.CacheService
+import com.auctor.execution.grpc.WorkflowDto
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.execution.AsyncExecutionStrategy
@@ -45,7 +46,7 @@ class GraphQLProvider(
     /**
      * Async data fetcher for workflows.
      */
-    private fun getWorkflowFetcher(): DataFetcher<CompletableFuture<Map<String, Any?>?>> =
+    private fun getWorkflowFetcher(): DataFetcher<CompletableFuture<WorkflowDto?>> =
         DataFetcher { env ->
             val id = env.getArgument<String?>("id") ?: ""
             val version = env.getArgument<Int?>("version") ?: 1

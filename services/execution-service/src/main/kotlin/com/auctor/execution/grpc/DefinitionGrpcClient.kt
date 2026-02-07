@@ -71,32 +71,40 @@ class DefinitionGrpcClient : AutoCloseable {
      * Fetch workflow by id and version with retry logic.
      */
     suspend fun getWorkflow(id: String, version: Int, authHeader: String? = null): WorkflowDto? {
-        return retryWithBackoff("getWorkflow") {
-            withContext(Dispatchers.IO) {
-                val stub = attachAuthHeader(authHeader)
-                withTimeout(callDeadlineMs + 200) {
-                    val request = GetWorkflowRequest.newBuilder()
-                        .setId(id)
-                        .setVersion(version)
-                        .build()
-                    val response = stub.withDeadlineAfter(callDeadlineMs, TimeUnit.MILLISECONDS)
-                        .getWorkflow(request)
-                    WorkflowDto(
-                        id = response.id,
-                        name = response.name,
-                        version = response.version,
-                        status = response.status,
-                        states = response.statesList,
-                        initialState = response.initialState,
-                        transitions = response.transitionsList.map { 
-                            TransitionDto(
-                                fromState = it.fromState,
-                                toState = it.toState,
-                                policyRef = it.policyRef.ifBlank { null }
-                            )
-                        }
-                    )
+        return try {
+            retryWithBackoff("getWorkflow") {
+                withContext(Dispatchers.IO) {
+                    val stub = attachAuthHeader(authHeader)
+                    withTimeout(callDeadlineMs + 200) {
+                        val request = GetWorkflowRequest.newBuilder()
+                            .setId(id)
+                            .setVersion(version)
+                            .build()
+                        val response = stub.withDeadlineAfter(callDeadlineMs, TimeUnit.MILLISECONDS)
+                            .getWorkflow(request)
+                        WorkflowDto(
+                            id = response.id,
+                            name = response.name,
+                            version = response.version,
+                            status = response.status,
+                            states = response.statesList,
+                            initialState = response.initialState,
+                            transitions = response.transitionsList.map {
+                                TransitionDto(
+                                    fromState = it.fromState,
+                                    toState = it.toState,
+                                    policyRef = it.policyRef.ifBlank { null }
+                                )
+                            }
+                        )
+                    }
                 }
+            }
+        } catch (e: StatusRuntimeException) {
+            if (e.status.code == Status.Code.NOT_FOUND || e.status.code == Status.Code.INVALID_ARGUMENT) {
+                null
+            } else {
+                throw e
             }
         }
     }
@@ -105,30 +113,38 @@ class DefinitionGrpcClient : AutoCloseable {
      * Fetch policy by id and version with retry logic.
      */
     suspend fun getPolicy(id: String, version: Int, authHeader: String? = null): PolicyDto? {
-        return retryWithBackoff("getPolicy") {
-            withContext(Dispatchers.IO) {
-                val stub = attachAuthHeader(authHeader)
-                withTimeout(callDeadlineMs + 200) {
-                    val request = GetPolicyRequest.newBuilder()
-                        .setId(id)
-                        .setVersion(version)
-                        .build()
-                    val response = stub.withDeadlineAfter(callDeadlineMs, TimeUnit.MILLISECONDS)
-                        .getPolicy(request)
-                    PolicyDto(
-                        id = response.id,
-                        name = response.name,
-                        version = response.version,
-                        status = response.status,
-                        conditions = response.conditionsList.map {
-                            PolicyConditionDto(
-                                field = it.field,
-                                operator = it.operator,
-                                value = it.value
-                            )
-                        }
-                    )
+        return try {
+            retryWithBackoff("getPolicy") {
+                withContext(Dispatchers.IO) {
+                    val stub = attachAuthHeader(authHeader)
+                    withTimeout(callDeadlineMs + 200) {
+                        val request = GetPolicyRequest.newBuilder()
+                            .setId(id)
+                            .setVersion(version)
+                            .build()
+                        val response = stub.withDeadlineAfter(callDeadlineMs, TimeUnit.MILLISECONDS)
+                            .getPolicy(request)
+                        PolicyDto(
+                            id = response.id,
+                            name = response.name,
+                            version = response.version,
+                            status = response.status,
+                            conditions = response.conditionsList.map {
+                                PolicyConditionDto(
+                                    field = it.field,
+                                    operator = it.operator,
+                                    value = it.value
+                                )
+                            }
+                        )
+                    }
                 }
+            }
+        } catch (e: StatusRuntimeException) {
+            if (e.status.code == Status.Code.NOT_FOUND || e.status.code == Status.Code.INVALID_ARGUMENT) {
+                null
+            } else {
+                throw e
             }
         }
     }
@@ -159,7 +175,7 @@ class DefinitionGrpcClient : AutoCloseable {
                     )
                 }
             }
-        } ?: throw IllegalStateException("Policy evaluation failed")
+        }
     }
 
     /**
@@ -169,7 +185,7 @@ class DefinitionGrpcClient : AutoCloseable {
         operation: String,
         maxAttempts: Int = 3,
         block: suspend () -> T
-    ): T? {
+    ): T {
         checkCircuitBreaker()
         
         var lastException: Exception? = null
@@ -186,7 +202,7 @@ class DefinitionGrpcClient : AutoCloseable {
                 if (e.status.code == Status.Code.NOT_FOUND || 
                     e.status.code == Status.Code.INVALID_ARGUMENT) {
                     recordFailure()
-                    return null
+                    throw e
                 }
                 
                 // Exponential backoff: 100ms, 200ms, 400ms

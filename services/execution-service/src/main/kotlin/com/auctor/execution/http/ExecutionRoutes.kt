@@ -1,9 +1,12 @@
 package com.auctor.execution.http
 
 import com.auctor.execution.domain.*
+import io.grpc.Status
+import io.grpc.StatusRuntimeException
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -29,6 +32,24 @@ data class StartExecutionRequest(
 @Serializable
 data class AdvanceExecutionRequest(
     val actor: String = "user"
+)
+
+@Serializable
+data class ExecutionStatusResponse(
+    val state: String,
+    val reason: String? = null
+)
+
+@Serializable
+data class ExecutionResponse(
+    val id: String,
+    val workflowId: String,
+    val workflowVersion: Int,
+    val currentState: String,
+    val status: ExecutionStatusResponse,
+    val input: Map<String, String>,
+    val createdAt: String,
+    val updatedAt: String
 )
 
 /**
@@ -65,11 +86,30 @@ fun Route.executionRoutes(executionEngine: ExecutionEngine) {
         // GET /api/v1/executions - List executions (with pagination)
         get {
             try {
-                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
-                val offset = call.request.queryParameters["offset"]?.toIntOrNull() ?: 0
-                
-                val executions = executionEngine.listExecutions(limit, offset)
-                call.respond(HttpStatusCode.OK, executions)
+                val limitParam = call.request.queryParameters["limit"]
+                val offsetParam = call.request.queryParameters["offset"]
+                val limit = limitParam?.toIntOrNull()
+                val offset = offsetParam?.toIntOrNull()
+
+                if (limitParam != null && limit == null) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("BAD_REQUEST", "Invalid limit"))
+                    return@get
+                }
+                if (offsetParam != null && offset == null) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("BAD_REQUEST", "Invalid offset"))
+                    return@get
+                }
+
+                val safeLimit = limit ?: 20
+                val safeOffset = offset ?: 0
+
+                if (safeLimit !in 1..100 || safeOffset < 0) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("BAD_REQUEST", "limit must be 1..100 and offset >= 0"))
+                    return@get
+                }
+
+                val executions = executionEngine.listExecutions(safeLimit, safeOffset)
+                call.respond(HttpStatusCode.OK, executions.map { it.toResponse() })
             } catch (e: Exception) {
                 logger.error("Error listing executions", e)
                 call.respond(
@@ -84,9 +124,9 @@ fun Route.executionRoutes(executionEngine: ExecutionEngine) {
             try {
                 val id = call.parameters["id"] ?: throw IllegalArgumentException("Missing id parameter")
                 val execution = executionEngine.getExecution(ExecutionId(id))
-                call.respond(HttpStatusCode.OK, execution)
-            } catch (e: IllegalArgumentException) {
-                logger.error("Execution not found", e)
+                call.respond(HttpStatusCode.OK, execution.toResponse())
+            } catch (e: ExecutionNotFoundException) {
+                logger.info("Execution not found: ${e.message}")
                 call.respond(
                     HttpStatusCode.NotFound,
                     ErrorResponse("NOT_FOUND", e.message ?: "Execution not found")
@@ -122,28 +162,31 @@ fun Route.executionRoutes(executionEngine: ExecutionEngine) {
                 try {
                     val request = call.receive<StartExecutionRequest>()
                     val authHeader = call.request.headers["Authorization"]
+                    val actor = actorFromPrincipal(call)
                     
                     val execution = executionEngine.startExecution(
                         workflowId = request.workflowId,
                         workflowVersion = request.workflowVersion,
                         input = request.input,
-                        actor = "user", // In production, extract from JWT
+                        actor = actor,
                         authHeader = authHeader
                     )
                     
-                    call.respond(HttpStatusCode.Created, execution)
+                    call.respond(HttpStatusCode.Created, execution.toResponse())
                 } catch (e: IllegalArgumentException) {
-                    logger.error("Invalid request", e)
+                    logger.info("Invalid request: ${e.message}")
                     call.respond(
                         HttpStatusCode.BadRequest,
                         ErrorResponse("BAD_REQUEST", e.message ?: "Invalid request")
                     )
                 } catch (e: IllegalStateException) {
-                    logger.error("Invalid state", e)
+                    logger.info("Invalid state: ${e.message}")
                     call.respond(
                         HttpStatusCode.Conflict,
                         ErrorResponse("CONFLICT", e.message ?: "Invalid state")
                     )
+                } catch (e: StatusRuntimeException) {
+                    handleGrpcError(call, e)
                 } catch (e: Exception) {
                     logger.error("Internal error", e)
                     call.respond(
@@ -159,27 +202,36 @@ fun Route.executionRoutes(executionEngine: ExecutionEngine) {
                     val id = call.parameters["id"] ?: throw IllegalArgumentException("Missing id parameter")
                     val request = call.receiveNullable<AdvanceExecutionRequest>()
                     val authHeader = call.request.headers["Authorization"]
+                    val actor = actorFromPrincipal(call)
                     
                     val stateTransitionRequest = StateTransitionRequest(
                         executionId = ExecutionId(id),
-                        actor = request?.actor ?: "user",
+                        actor = actor,
                         correlationId = UUID.randomUUID().toString()
                     )
                     
                     val execution = executionEngine.advanceExecution(stateTransitionRequest, authHeader)
-                    call.respond(HttpStatusCode.OK, execution)
+                    call.respond(HttpStatusCode.OK, execution.toResponse())
                 } catch (e: IllegalArgumentException) {
-                    logger.error("Invalid request", e)
+                    logger.info("Invalid request: ${e.message}")
                     call.respond(
                         HttpStatusCode.BadRequest,
                         ErrorResponse("BAD_REQUEST", e.message ?: "Invalid request")
                     )
+                } catch (e: ExecutionNotFoundException) {
+                    logger.info("Execution not found: ${e.message}")
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        ErrorResponse("NOT_FOUND", e.message ?: "Execution not found")
+                    )
                 } catch (e: IllegalStateException) {
-                    logger.error("Invalid state transition", e)
+                    logger.info("Invalid state transition: ${e.message}")
                     call.respond(
                         HttpStatusCode.Conflict,
                         ErrorResponse("CONFLICT", e.message ?: "Invalid state transition")
                     )
+                } catch (e: StatusRuntimeException) {
+                    handleGrpcError(call, e)
                 } catch (e: Exception) {
                     logger.error("Error advancing execution", e)
                     call.respond(
@@ -189,5 +241,50 @@ fun Route.executionRoutes(executionEngine: ExecutionEngine) {
                 }
             }
         }
+    }
+}
+
+private fun Execution.toResponse(): ExecutionResponse {
+    return ExecutionResponse(
+        id = id.value,
+        workflowId = workflowId,
+        workflowVersion = workflowVersion,
+        currentState = currentState,
+        status = status.toResponse(),
+        input = input,
+        createdAt = createdAt.toString(),
+        updatedAt = updatedAt.toString()
+    )
+}
+
+private fun ExecutionStatus.toResponse(): ExecutionStatusResponse {
+    return when (this) {
+        is ExecutionStatus.Running -> ExecutionStatusResponse("RUNNING")
+        is ExecutionStatus.Completed -> ExecutionStatusResponse("COMPLETED")
+        is ExecutionStatus.Suspended -> ExecutionStatusResponse("SUSPENDED")
+        is ExecutionStatus.Failed -> ExecutionStatusResponse("FAILED", reason)
+    }
+}
+
+private fun actorFromPrincipal(call: ApplicationCall): String {
+    val principal = call.principal<JWTPrincipal>()
+    val subject = principal?.payload?.subject ?: principal?.payload?.getClaim("sub")?.asString()
+    return subject ?: "unknown"
+}
+
+private suspend fun handleGrpcError(call: ApplicationCall, e: StatusRuntimeException) {
+    when (e.status.code) {
+        Status.Code.NOT_FOUND -> call.respond(
+            HttpStatusCode.NotFound,
+            ErrorResponse("NOT_FOUND", e.status.description ?: "Not found")
+        )
+        Status.Code.INVALID_ARGUMENT -> call.respond(
+            HttpStatusCode.BadRequest,
+            ErrorResponse("BAD_REQUEST", e.status.description ?: "Invalid request")
+        )
+        else -> call.respond(
+            HttpStatusCode.BadGateway,
+            ErrorResponse("UPSTREAM_ERROR", e.status.description ?: "Upstream service error")
+        )
     }
 }

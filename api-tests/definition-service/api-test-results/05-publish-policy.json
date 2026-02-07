@@ -2,14 +2,14 @@
   "request": {
     "name": "05-publish-policy",
     "method": "POST",
-    "url": "http://localhost:8081/api/v1/policies/c77d715e-5cfa-4ba6-9f33-d27ed5a2816a/publish",
-    "timestamp": "Sat Feb  7 18:27:16 UTC 2026",
+    "url": "http://localhost:8081/api/v1/policies/9da1c1a0-a13e-4b79-a6cb-f474b132f09c/publish",
+    "timestamp": "Sat Feb  7 19:50:40 UTC 2026",
     "body": null
   },
   "response": {
     "status": "200",
     "body": {
-      "id": "c77d715e-5cfa-4ba6-9f33-d27ed5a2816a",
+      "id": "9da1c1a0-a13e-4b79-a6cb-f474b132f09c",
       "name": "High Value Order Policy",
       "version": 2,
       "status": "PUBLISHED",
@@ -25,7 +25,7 @@
           "value": "PREMIUM"
         }
       ],
-      "createdAt": "2026-02-07T18:27:16.073642Z"
+      "createdAt": "2026-02-07T19:50:39.823297Z"
     }
   }
 }

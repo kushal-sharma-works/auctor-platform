@@ -22,7 +22,8 @@ class ExecutionStatusTest {
     @Test
     fun `should serialize Failed status with reason`() {
         val status = ExecutionStatus.Failed("Policy denied")
-        assertEquals("FAILED:Policy denied", status.toStorageString())
+        val encoded = java.util.Base64.getEncoder().encodeToString("Policy denied".toByteArray(Charsets.UTF_8))
+        assertEquals("FAILED:$encoded", status.toStorageString())
     }
 
     @Test
@@ -45,7 +46,8 @@ class ExecutionStatusTest {
 
     @Test
     fun `should deserialize Failed status with reason`() {
-        val status = ExecutionStatus.fromStorageString("FAILED:Network error")
+        val encoded = java.util.Base64.getEncoder().encodeToString("Network error".toByteArray(Charsets.UTF_8))
+        val status = ExecutionStatus.fromStorageString("FAILED:$encoded")
         assertEquals(ExecutionStatus.Failed("Network error"), status)
     }
 

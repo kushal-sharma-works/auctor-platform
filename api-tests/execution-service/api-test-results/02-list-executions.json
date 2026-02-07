@@ -3,7 +3,7 @@
     "name": "02-list-executions",
     "method": "GET",
     "url": "http://localhost:8082/api/v1/executions?limit=20&offset=0",
-    "timestamp": "Sat Feb  7 18:34:21 UTC 2026",
+    "timestamp": "Sat Feb  7 19:51:30 UTC 2026",
     "body": null
   },
   "response": {
@@ -15,15 +15,15 @@
         "workflowVersion": 1,
         "currentState": "pending",
         "status": {
-          "type": "com.auctor.execution.domain.ExecutionStatus.Running"
+          "state": "RUNNING"
         },
         "input": {
           "amount": "5000",
           "country": "US",
           "userId": "user-001"
         },
-        "createdAt": "2026-02-07T18:31:45.240651Z",
-        "updatedAt": "2026-02-07T18:31:45.240651Z"
+        "createdAt": "2026-02-07T19:46:20.696126Z",
+        "updatedAt": "2026-02-07T19:46:20.696126Z"
       }
     ]
   }

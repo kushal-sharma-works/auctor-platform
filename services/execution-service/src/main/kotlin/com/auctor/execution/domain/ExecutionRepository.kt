@@ -10,6 +10,11 @@ interface ExecutionRepository {
      * @return Saved execution with generated fields populated
      */
     suspend fun save(execution: Execution): Execution
+
+    /**
+     * Save a new execution along with associated audit events in a single transaction.
+     */
+    suspend fun saveWithAudit(execution: Execution, auditEvents: List<AuditEvent>): Execution
     
     /**
      * Find execution by ID.
@@ -31,4 +36,9 @@ interface ExecutionRepository {
      * @throws IllegalArgumentException if execution doesn't exist
      */
     suspend fun update(execution: Execution): Execution
+
+    /**
+     * Update an execution and append audit events in a single transaction.
+     */
+    suspend fun updateWithAudit(execution: Execution, auditEvents: List<AuditEvent>): Execution
 }

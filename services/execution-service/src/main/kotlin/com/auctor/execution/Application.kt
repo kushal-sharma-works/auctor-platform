@@ -36,6 +36,7 @@ fun main() {
 fun Application.module(
     grpcClient: DefinitionGrpcClient? = null,
     cacheService: CacheService? = null,
+    enableCache: Boolean = true,
     dataSource: HikariDataSource? = null,
     executionEngine: ExecutionEngine? = null
 ) {
@@ -82,10 +83,11 @@ fun Application.module(
     )
 
     // Create cache service (shared) - use provided one for testing or create default
-    // If cacheService is explicitly passed (including null), respect that
-    // Otherwise try to create one, but if Redis is unavailable, continue without it (cache is optional)
+    // If cacheService is explicitly passed, respect it; otherwise, honor enableCache
     val actualCacheService = if (cacheService != null) {
         cacheService
+    } else if (!enableCache) {
+        null
     } else {
         try {
             CacheService(

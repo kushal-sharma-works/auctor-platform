@@ -30,6 +30,21 @@ class ExposedExecutionRepository : ExecutionRepository {
         }
         execution
     }
+
+    override suspend fun saveWithAudit(execution: Execution, auditEvents: List<AuditEvent>): Execution = dbQuery {
+        Executions.insert {
+            it[id] = execution.id.value
+            it[workflowId] = execution.workflowId
+            it[workflowVersion] = execution.workflowVersion
+            it[currentState] = execution.currentState
+            it[status] = execution.status.toStorageString()
+            it[input] = json.encodeToString(execution.input)
+            it[createdAt] = execution.createdAt
+            it[updatedAt] = execution.updatedAt
+        }
+        auditEvents.forEach { insertAuditEvent(it) }
+        execution
+    }
     
     override suspend fun findById(id: ExecutionId): Execution? = dbQuery {
         Executions.selectAll()
@@ -57,6 +72,20 @@ class ExposedExecutionRepository : ExecutionRepository {
         require(updated == 1) { "Execution with id ${execution.id} not found" }
         execution
     }
+
+    override suspend fun updateWithAudit(execution: Execution, auditEvents: List<AuditEvent>): Execution = dbQuery {
+        val updated = Executions.update({ Executions.id eq execution.id.value }) {
+            it[workflowId] = execution.workflowId
+            it[workflowVersion] = execution.workflowVersion
+            it[currentState] = execution.currentState
+            it[status] = execution.status.toStorageString()
+            it[input] = json.encodeToString(execution.input)
+            it[updatedAt] = execution.updatedAt
+        }
+        require(updated == 1) { "Execution with id ${execution.id} not found" }
+        auditEvents.forEach { insertAuditEvent(it) }
+        execution
+    }
     
     private fun rowToExecution(row: ResultRow): Execution {
         val inputMap = json.decodeFromString<Map<String, String>>(row[Executions.input])
@@ -70,6 +99,22 @@ class ExposedExecutionRepository : ExecutionRepository {
             createdAt = row[Executions.createdAt],
             updatedAt = row[Executions.updatedAt]
         )
+    }
+
+    private fun insertAuditEvent(event: AuditEvent) {
+        AuditEvents.insert {
+            it[id] = event.id
+            it[executionId] = event.executionId
+            it[timestamp] = event.timestamp
+            it[eventType] = event.eventType.name
+            it[fromState] = event.fromState
+            it[toState] = event.toState
+            it[policyId] = event.policyId
+            it[policyResult] = event.policyResult
+            it[explanation] = event.explanation
+            it[actor] = event.actor
+            it[correlationId] = event.correlationId
+        }
     }
     
     private suspend fun <T> dbQuery(block: suspend () -> T): T =

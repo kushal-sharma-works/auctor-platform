@@ -1,12 +1,14 @@
 package com.auctor.execution.cache
 
 import com.auctor.execution.grpc.DefinitionGrpcClient
+import com.auctor.execution.grpc.WorkflowDto
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.lettuce.core.RedisClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
+import org.slf4j.LoggerFactory
 import java.time.Duration
 
 /**
@@ -19,10 +21,12 @@ class CacheService(
     redisUrl: String = "redis://localhost:6379"
 ) : AutoCloseable {
 
+    private val logger = LoggerFactory.getLogger(CacheService::class.java)
+
     private val l1Cache = Caffeine.newBuilder()
         .maximumSize(10_000)
         .expireAfterWrite(Duration.ofMinutes(5))
-        .build<String, Map<String, Any>?>()
+        .build<String, WorkflowDto?>()
 
     private val redisClient = RedisClient.create(redisUrl)
     private val redisConn = redisClient.connect()
@@ -31,7 +35,7 @@ class CacheService(
 
     private val L2_TTL_SECONDS = 300L // 5 minutes
 
-    suspend fun getWorkflowCached(id: String, version: Int, authHeader: String? = null): Map<String, Any>? {
+    suspend fun getWorkflowCached(id: String, version: Int, authHeader: String? = null): WorkflowDto? {
         val cacheKey = "workflow:$id:$version"
         
         // 1) L1
@@ -41,11 +45,9 @@ class CacheService(
         val fromL2 = withContext(Dispatchers.IO) {
             try {
                 val stored = redisCommands.get(cacheKey).await()
-                stored?.let {
-                    @Suppress("UNCHECKED_CAST")
-                    mapper.readValue(it, Map::class.java) as? Map<String, Any>
-                }
+                stored?.let { mapper.readValue(it, WorkflowDto::class.java) }
             } catch (e: Exception) {
+                logger.warn("Redis cache read failed for $cacheKey", e)
                 null
             }
         }
@@ -57,34 +59,18 @@ class CacheService(
         // 3) Load from gRPC
         val loaded = grpcClient.getWorkflow(id, version, authHeader)
         if (loaded != null) {
-            val result = mapOf(
-                "id" to loaded.id,
-                "name" to loaded.name,
-                "version" to loaded.version,
-                "status" to loaded.status,
-                "states" to loaded.states,
-                "initialState" to loaded.initialState,
-                "transitions" to loaded.transitions.map {
-                    mapOf(
-                        "fromState" to it.fromState,
-                        "toState" to it.toState,
-                        "policyRef" to it.policyRef
-                    )
-                }
-            )
-            
             // store in L2
             try {
-                val json = mapper.writeValueAsString(result)
+                val json = mapper.writeValueAsString(loaded)
                 redisCommands.setex(cacheKey, L2_TTL_SECONDS, json).await()
             } catch (e: Exception) {
-                // log and continue
+                logger.warn("Redis cache write failed for $cacheKey", e)
             }
             
             // store in L1
-            l1Cache.put(cacheKey, result)
+            l1Cache.put(cacheKey, loaded)
             
-            return result
+            return loaded
         }
 
         return null

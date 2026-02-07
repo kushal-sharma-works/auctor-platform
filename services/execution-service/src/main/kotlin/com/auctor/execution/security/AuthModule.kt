@@ -5,11 +5,15 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 
 fun Application.configureAuth() {
+
+    val config = environment.config
+    val isDev = developmentMode
     
     install(Authentication) {
         
         jwt("auth-jwt") {
-            verifier(JwtConfig.verifier)
+            val verifier = JwtConfig.buildVerifier(config, isDev)
+            verifier(verifier)
             
             validate { credential ->
                 val roles = credential.payload
