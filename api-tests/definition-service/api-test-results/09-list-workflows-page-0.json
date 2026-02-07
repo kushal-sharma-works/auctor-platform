@@ -3,7 +3,7 @@
     "name": "09-list-workflows-page-0",
     "method": "GET",
     "url": "http://localhost:8081/api/v1/workflows?page=0&size=10",
-    "timestamp": "Sat Feb  7 12:32:05 UTC 2026",
+    "timestamp": "Sat Feb  7 12:37:52 UTC 2026",
     "body": null
   },
   "response": {
@@ -332,7 +332,7 @@
         "unpaged": false
       },
       "totalPages": 2,
-      "totalElements": 13,
+      "totalElements": 15,
       "last": false,
       "size": 10,
       "number": 0,

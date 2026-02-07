@@ -3,7 +3,7 @@
     "name": "03-list-policies-page-0",
     "method": "GET",
     "url": "http://localhost:8081/api/v1/policies?page=0&size=10",
-    "timestamp": "Sat Feb  7 12:32:05 UTC 2026",
+    "timestamp": "Sat Feb  7 12:37:52 UTC 2026",
     "body": null
   },
   "response": {
@@ -202,23 +202,28 @@
           "createdAt": "2026-02-07T12:17:23.511758Z"
         },
         {
-          "id": "3f00a73a-eeb1-444e-99cf-986e953271d9",
-          "name": "High Value Order Policy",
+          "id": "0941f7f7-f1fe-4e94-9845-60574e351923",
+          "name": "Shipping Eligibility Policy",
           "version": 1,
           "status": "DRAFT",
           "conditions": [
             {
-              "field": "amount",
-              "operator": "GT",
-              "value": "1000"
+              "field": "destination",
+              "operator": "IN",
+              "value": "USA,CANADA,MEXICO"
             },
             {
-              "field": "customerType",
+              "field": "weight",
+              "operator": "LT",
+              "value": "50"
+            },
+            {
+              "field": "hazardous",
               "operator": "EQ",
-              "value": "PREMIUM"
+              "value": "false"
             }
           ],
-          "createdAt": "2026-02-07T12:32:04.908881Z"
+          "createdAt": "2026-02-07T12:32:05.052957Z"
         }
       ],
       "pageable": {
@@ -234,7 +239,7 @@
         "unpaged": false
       },
       "totalPages": 2,
-      "totalElements": 11,
+      "totalElements": 13,
       "last": false,
       "size": 10,
       "number": 0,

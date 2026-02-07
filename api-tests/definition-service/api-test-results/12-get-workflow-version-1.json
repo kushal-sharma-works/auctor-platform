@@ -2,14 +2,14 @@
   "request": {
     "name": "12-get-workflow-version-1",
     "method": "GET",
-    "url": "http://localhost:8081/api/v1/workflows/d3d53d36-0ca4-4751-9615-f27c1603f058/versions/1",
-    "timestamp": "Sat Feb  7 12:32:05 UTC 2026",
+    "url": "http://localhost:8081/api/v1/workflows/427536a1-b6f5-44d4-9808-7794d7ca3347/versions/1",
+    "timestamp": "Sat Feb  7 12:37:52 UTC 2026",
     "body": null
   },
   "response": {
     "status": "200",
     "body": {
-      "id": "d3d53d36-0ca4-4751-9615-f27c1603f058",
+      "id": "427536a1-b6f5-44d4-9808-7794d7ca3347",
       "name": "Order Approval Workflow",
       "version": 1,
       "status": "DRAFT",
@@ -31,7 +31,7 @@
         {
           "fromState": "REVIEWING",
           "toState": "APPROVED",
-          "policyRef": "3f00a73a-eeb1-444e-99cf-986e953271d9",
+          "policyRef": "2cece933-5280-4811-896d-e09545e8117c",
           "guardExpression": "approverCount >= 1"
         },
         {
@@ -43,12 +43,12 @@
         {
           "fromState": "APPROVED",
           "toState": "COMPLETED",
-          "policyRef": "0941f7f7-f1fe-4e94-9845-60574e351923",
+          "policyRef": "f4001f62-aa69-42e1-9436-8860d3a7b727",
           "guardExpression": null
         }
       ],
-      "createdAt": "2026-02-07T12:32:05.531161Z",
-      "updatedAt": "2026-02-07T12:32:05.531161Z"
+      "createdAt": "2026-02-07T12:37:52.605804Z",
+      "updatedAt": "2026-02-07T12:37:52.605804Z"
     }
   }
 }

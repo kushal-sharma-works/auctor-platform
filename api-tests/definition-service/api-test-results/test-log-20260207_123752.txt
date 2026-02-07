@@ -1,0 +1,1674 @@
+╔════════════════════════════════════════════════════════╗
+║     Definition Service API Test Suite                 ║
+║     Timestamp: Sat Feb  7 12:37:52 UTC 2026                   ║
+╚════════════════════════════════════════════════════════╝
+
+==========================================
+🔹 00-health-check
+==========================================
+Method: GET
+URL: http://localhost:8081/actuator/health
+Status Code: 200
+Request/response saved to: ./api-test-results/00-health-check.json
+Response:
+{
+  "status": "UP",
+  "groups": [
+    "liveness",
+    "readiness"
+  ],
+  "components": {
+    "db": {
+      "status": "UP",
+      "details": {
+        "database": "PostgreSQL",
+        "validationQuery": "isValid()"
+      }
+    },
+    "diskSpace": {
+      "status": "UP",
+      "details": {
+        "total": 33636024320,
+        "free": 16087986176,
+        "threshold": 10485760,
+        "path": "/workspaces/auctor-platform/services/definition-service/.",
+        "exists": true
+      }
+    },
+    "livenessState": {
+      "status": "UP"
+    },
+    "ping": {
+      "status": "UP"
+    },
+    "readinessState": {
+      "status": "UP"
+    },
+    "ssl": {
+      "status": "UP",
+      "details": {
+        "validChains": [],
+        "invalidChains": []
+      }
+    }
+  }
+}
+
+╔════════════════════════════════════════════════════════╗
+║                  POLICY ENDPOINTS                      ║
+╚════════════════════════════════════════════════════════╝
+
+==========================================
+🔹 01-create-policy-high-value
+==========================================
+Method: POST
+URL: http://localhost:8081/api/v1/policies
+Request Body:
+{
+  "name": "High Value Order Policy",
+  "conditions": [
+    {
+      "field": "amount",
+      "operator": "GT",
+      "value": "1000"
+    },
+    {
+      "field": "customerType",
+      "operator": "EQ",
+      "value": "PREMIUM"
+    }
+  ]
+}
+Status Code: 201
+Request/response saved to: ./api-test-results/01-create-policy-high-value.json
+Response:
+{
+  "id": "2cece933-5280-4811-896d-e09545e8117c",
+  "name": "High Value Order Policy",
+  "version": 1,
+  "status": "DRAFT",
+  "conditions": [
+    {
+      "field": "amount",
+      "operator": "GT",
+      "value": "1000"
+    },
+    {
+      "field": "customerType",
+      "operator": "EQ",
+      "value": "PREMIUM"
+    }
+  ],
+  "createdAt": "2026-02-07T12:37:52.192052997Z"
+}
+
+==========================================
+🔹 02-create-policy-shipping
+==========================================
+Method: POST
+URL: http://localhost:8081/api/v1/policies
+Request Body:
+{
+  "name": "Shipping Eligibility Policy",
+  "conditions": [
+    {
+      "field": "destination",
+      "operator": "IN",
+      "value": "USA,CANADA,MEXICO"
+    },
+    {
+      "field": "weight",
+      "operator": "LT",
+      "value": "50"
+    },
+    {
+      "field": "hazardous",
+      "operator": "EQ",
+      "value": "false"
+    }
+  ]
+}
+Status Code: 201
+Request/response saved to: ./api-test-results/02-create-policy-shipping.json
+Response:
+{
+  "id": "f4001f62-aa69-42e1-9436-8860d3a7b727",
+  "name": "Shipping Eligibility Policy",
+  "version": 1,
+  "status": "DRAFT",
+  "conditions": [
+    {
+      "field": "destination",
+      "operator": "IN",
+      "value": "USA,CANADA,MEXICO"
+    },
+    {
+      "field": "weight",
+      "operator": "LT",
+      "value": "50"
+    },
+    {
+      "field": "hazardous",
+      "operator": "EQ",
+      "value": "false"
+    }
+  ],
+  "createdAt": "2026-02-07T12:37:52.294906455Z"
+}
+
+==========================================
+🔹 03-list-policies-page-0
+==========================================
+Method: GET
+URL: http://localhost:8081/api/v1/policies?page=0&size=10
+Status Code: 200
+Request/response saved to: ./api-test-results/03-list-policies-page-0.json
+Response:
+{
+  "content": [
+    {
+      "id": "amount-check-001",
+      "name": "Amount and Country Check Policy",
+      "version": 1,
+      "status": "PUBLISHED",
+      "conditions": [
+        {
+          "field": "amount",
+          "operator": "LTE",
+          "value": "10000"
+        },
+        {
+          "field": "country",
+          "operator": "IN",
+          "value": "DE,FR,NL"
+        }
+      ],
+      "createdAt": "2026-02-07T10:37:33.508548Z"
+    },
+    {
+      "id": "f7258979-5938-4cec-8453-eb8ada553168",
+      "name": "High Value Order Policy",
+      "version": 1,
+      "status": "DRAFT",
+      "conditions": [
+        {
+          "field": "amount",
+          "operator": "GT",
+          "value": "1000"
+        },
+        {
+          "field": "customerType",
+          "operator": "EQ",
+          "value": "PREMIUM"
+        }
+      ],
+      "createdAt": "2026-02-07T10:53:39.505925Z"
+    },
+    {
+      "id": "a5eabfda-07d1-488f-9fd5-c915aaaf0a04",
+      "name": "Shipping Eligibility Policy",
+      "version": 1,
+      "status": "DRAFT",
+      "conditions": [
+        {
+          "field": "destination",
+          "operator": "IN",
+          "value": "USA,CANADA,MEXICO"
+        },
+        {
+          "field": "weight",
+          "operator": "LT",
+          "value": "50"
+        },
+        {
+          "field": "hazardous",
+          "operator": "EQ",
+          "value": "false"
+        }
+      ],
+      "createdAt": "2026-02-07T10:53:39.569340Z"
+    },
+    {
+      "id": "3c094547-7752-4c23-8a9b-7aef8bb34852",
+      "name": "High Value Order Policy",
+      "version": 1,
+      "status": "DRAFT",
+      "conditions": [
+        {
+          "field": "amount",
+          "operator": "GT",
+          "value": "1000"
+        },
+        {
+          "field": "customerType",
+          "operator": "EQ",
+          "value": "PREMIUM"
+        }
+      ],
+      "createdAt": "2026-02-07T12:08:21.379219Z"
+    },
+    {
+      "id": "745d672d-12e9-4860-b136-8ff635158538",
+      "name": "Shipping Eligibility Policy",
+      "version": 1,
+      "status": "DRAFT",
+      "conditions": [
+        {
+          "field": "destination",
+          "operator": "IN",
+          "value": "USA,CANADA,MEXICO"
+        },
+        {
+          "field": "weight",
+          "operator": "LT",
+          "value": "50"
+        },
+        {
+          "field": "hazardous",
+          "operator": "EQ",
+          "value": "false"
+        }
+      ],
+      "createdAt": "2026-02-07T12:08:21.500431Z"
+    },
+    {
+      "id": "402042d0-6900-400f-85e4-5ce8cc59ece4",
+      "name": "High Value Order Policy",
+      "version": 1,
+      "status": "DRAFT",
+      "conditions": [
+        {
+          "field": "amount",
+          "operator": "GT",
+          "value": "1000"
+        },
+        {
+          "field": "customerType",
+          "operator": "EQ",
+          "value": "PREMIUM"
+        }
+      ],
+      "createdAt": "2026-02-07T12:09:29.324915Z"
+    },
+    {
+      "id": "6357f2de-fab3-462f-87fd-05d69e6eb713",
+      "name": "Shipping Eligibility Policy",
+      "version": 1,
+      "status": "DRAFT",
+      "conditions": [
+        {
+          "field": "destination",
+          "operator": "IN",
+          "value": "USA,CANADA,MEXICO"
+        },
+        {
+          "field": "weight",
+          "operator": "LT",
+          "value": "50"
+        },
+        {
+          "field": "hazardous",
+          "operator": "EQ",
+          "value": "false"
+        }
+      ],
+      "createdAt": "2026-02-07T12:09:29.405463Z"
+    },
+    {
+      "id": "7b176d59-4929-4e1a-adf7-4fa8745c2775",
+      "name": "Shipping Eligibility Policy",
+      "version": 1,
+      "status": "DRAFT",
+      "conditions": [
+        {
+          "field": "destination",
+          "operator": "IN",
+          "value": "USA,CANADA,MEXICO"
+        },
+        {
+          "field": "weight",
+          "operator": "LT",
+          "value": "50"
+        },
+        {
+          "field": "hazardous",
+          "operator": "EQ",
+          "value": "false"
+        }
+      ],
+      "createdAt": "2026-02-07T12:17:23.670646Z"
+    },
+    {
+      "id": "4e3dc9a9-8dcd-4f86-94c1-db9ecdad9d9e",
+      "name": "High Value Order Policy",
+      "version": 2,
+      "status": "PUBLISHED",
+      "conditions": [
+        {
+          "field": "amount",
+          "operator": "GT",
+          "value": "1000"
+        },
+        {
+          "field": "customerType",
+          "operator": "EQ",
+          "value": "PREMIUM"
+        }
+      ],
+      "createdAt": "2026-02-07T12:17:23.511758Z"
+    },
+    {
+      "id": "0941f7f7-f1fe-4e94-9845-60574e351923",
+      "name": "Shipping Eligibility Policy",
+      "version": 1,
+      "status": "DRAFT",
+      "conditions": [
+        {
+          "field": "destination",
+          "operator": "IN",
+          "value": "USA,CANADA,MEXICO"
+        },
+        {
+          "field": "weight",
+          "operator": "LT",
+          "value": "50"
+        },
+        {
+          "field": "hazardous",
+          "operator": "EQ",
+          "value": "false"
+        }
+      ],
+      "createdAt": "2026-02-07T12:32:05.052957Z"
+    }
+  ],
+  "pageable": {
+    "pageNumber": 0,
+    "pageSize": 10,
+    "sort": {
+      "empty": true,
+      "sorted": false,
+      "unsorted": true
+    },
+    "offset": 0,
+    "paged": true,
+    "unpaged": false
+  },
+  "totalPages": 2,
+  "totalElements": 13,
+  "last": false,
+  "size": 10,
+  "number": 0,
+  "numberOfElements": 10,
+  "sort": {
+    "empty": true,
+    "sorted": false,
+    "unsorted": true
+  },
+  "first": true,
+  "empty": false
+}
+
+==========================================
+🔹 04-get-policy-by-id
+==========================================
+Method: GET
+URL: http://localhost:8081/api/v1/policies/2cece933-5280-4811-896d-e09545e8117c
+Status Code: 200
+Request/response saved to: ./api-test-results/04-get-policy-by-id.json
+Response:
+{
+  "id": "2cece933-5280-4811-896d-e09545e8117c",
+  "name": "High Value Order Policy",
+  "version": 1,
+  "status": "DRAFT",
+  "conditions": [
+    {
+      "field": "amount",
+      "operator": "GT",
+      "value": "1000"
+    },
+    {
+      "field": "customerType",
+      "operator": "EQ",
+      "value": "PREMIUM"
+    }
+  ],
+  "createdAt": "2026-02-07T12:37:52.192053Z"
+}
+
+==========================================
+🔹 05-publish-policy
+==========================================
+Method: POST
+URL: http://localhost:8081/api/v1/policies/2cece933-5280-4811-896d-e09545e8117c/publish
+Status Code: 200
+Request/response saved to: ./api-test-results/05-publish-policy.json
+Response:
+{
+  "id": "2cece933-5280-4811-896d-e09545e8117c",
+  "name": "High Value Order Policy",
+  "version": 2,
+  "status": "PUBLISHED",
+  "conditions": [
+    {
+      "field": "amount",
+      "operator": "GT",
+      "value": "1000"
+    },
+    {
+      "field": "customerType",
+      "operator": "EQ",
+      "value": "PREMIUM"
+    }
+  ],
+  "createdAt": "2026-02-07T12:37:52.192053Z"
+}
+
+==========================================
+🔹 06-get-policy-version-1
+==========================================
+Method: GET
+URL: http://localhost:8081/api/v1/policies/2cece933-5280-4811-896d-e09545e8117c/versions/1
+Status Code: 200
+Request/response saved to: ./api-test-results/06-get-policy-version-1.json
+Response:
+{
+  "id": "2cece933-5280-4811-896d-e09545e8117c",
+  "name": "High Value Order Policy",
+  "version": 1,
+  "status": "DRAFT",
+  "conditions": [
+    {
+      "field": "amount",
+      "operator": "GT",
+      "value": "1000"
+    },
+    {
+      "field": "customerType",
+      "operator": "EQ",
+      "value": "PREMIUM"
+    }
+  ],
+  "createdAt": "2026-02-07T12:37:52.192053Z"
+}
+
+╔════════════════════════════════════════════════════════╗
+║                 WORKFLOW ENDPOINTS                     ║
+╚════════════════════════════════════════════════════════╝
+
+==========================================
+🔹 07-create-workflow-order-approval
+==========================================
+Method: POST
+URL: http://localhost:8081/api/v1/workflows
+Request Body:
+{
+  "name": "Order Approval Workflow",
+  "states": [
+    "PENDING",
+    "REVIEWING",
+    "APPROVED",
+    "REJECTED",
+    "COMPLETED"
+  ],
+  "initialState": "PENDING",
+  "transitions": [
+    {
+      "fromState": "PENDING",
+      "toState": "REVIEWING",
+      "guardExpression": "amount < 10000"
+    },
+    {
+      "fromState": "REVIEWING",
+      "toState": "APPROVED",
+      "policyRef": "2cece933-5280-4811-896d-e09545e8117c",
+      "guardExpression": "approverCount >= 1"
+    },
+    {
+      "fromState": "REVIEWING",
+      "toState": "REJECTED",
+      "guardExpression": "!approved"
+    },
+    {
+      "fromState": "APPROVED",
+      "toState": "COMPLETED",
+      "policyRef": "f4001f62-aa69-42e1-9436-8860d3a7b727"
+    }
+  ]
+}
+Status Code: 201
+Request/response saved to: ./api-test-results/07-create-workflow-order-approval.json
+Response:
+{
+  "id": "427536a1-b6f5-44d4-9808-7794d7ca3347",
+  "name": "Order Approval Workflow",
+  "version": 1,
+  "status": "DRAFT",
+  "states": [
+    "PENDING",
+    "REVIEWING",
+    "APPROVED",
+    "REJECTED",
+    "COMPLETED"
+  ],
+  "initialState": "PENDING",
+  "transitions": [
+    {
+      "fromState": "PENDING",
+      "toState": "REVIEWING",
+      "policyRef": null,
+      "guardExpression": "amount < 10000"
+    },
+    {
+      "fromState": "REVIEWING",
+      "toState": "APPROVED",
+      "policyRef": "2cece933-5280-4811-896d-e09545e8117c",
+      "guardExpression": "approverCount >= 1"
+    },
+    {
+      "fromState": "REVIEWING",
+      "toState": "REJECTED",
+      "policyRef": null,
+      "guardExpression": "!approved"
+    },
+    {
+      "fromState": "APPROVED",
+      "toState": "COMPLETED",
+      "policyRef": "f4001f62-aa69-42e1-9436-8860d3a7b727",
+      "guardExpression": null
+    }
+  ],
+  "createdAt": "2026-02-07T12:37:52.605803659Z",
+  "updatedAt": "2026-02-07T12:37:52.605803659Z"
+}
+
+==========================================
+🔹 08-create-workflow-simple
+==========================================
+Method: POST
+URL: http://localhost:8081/api/v1/workflows
+Request Body:
+{
+  "name": "Simple Two-State Workflow",
+  "states": [
+    "START",
+    "END"
+  ],
+  "initialState": "START",
+  "transitions": [
+    {
+      "fromState": "START",
+      "toState": "END",
+      "guardExpression": "completed == true"
+    }
+  ]
+}
+Status Code: 201
+Request/response saved to: ./api-test-results/08-create-workflow-simple.json
+Response:
+{
+  "id": "c848e07b-abcc-410a-a802-d66b26f9faf8",
+  "name": "Simple Two-State Workflow",
+  "version": 1,
+  "status": "DRAFT",
+  "states": [
+    "START",
+    "END"
+  ],
+  "initialState": "START",
+  "transitions": [
+    {
+      "fromState": "START",
+      "toState": "END",
+      "policyRef": null,
+      "guardExpression": "completed == true"
+    }
+  ],
+  "createdAt": "2026-02-07T12:37:52.685692598Z",
+  "updatedAt": "2026-02-07T12:37:52.685692598Z"
+}
+
+==========================================
+🔹 09-list-workflows-page-0
+==========================================
+Method: GET
+URL: http://localhost:8081/api/v1/workflows?page=0&size=10
+Status Code: 200
+Request/response saved to: ./api-test-results/09-list-workflows-page-0.json
+Response:
+{
+  "content": [
+    {
+      "id": "payment-approval-001",
+      "name": "Payment Approval Workflow",
+      "version": 1,
+      "status": "PUBLISHED",
+      "states": [
+        "DRAFT",
+        "REVIEW",
+        "APPROVED",
+        "REJECTED"
+      ],
+      "initialState": "DRAFT",
+      "transitions": [
+        {
+          "fromState": "DRAFT",
+          "toState": "REVIEW",
+          "policyRef": null,
+          "guardExpression": null
+        },
+        {
+          "fromState": "REVIEW",
+          "toState": "APPROVED",
+          "policyRef": "amount-check-001",
+          "guardExpression": null
+        },
+        {
+          "fromState": "REVIEW",
+          "toState": "REJECTED",
+          "policyRef": null,
+          "guardExpression": null
+        }
+      ],
+      "createdAt": "2026-02-07T10:37:33.508548Z",
+      "updatedAt": "2026-02-07T10:37:33.508548Z"
+    },
+    {
+      "id": "63194497-277d-47bf-9afe-f4b26cc033ce",
+      "name": "Order Approval Workflow",
+      "version": 1,
+      "status": "DRAFT",
+      "states": [
+        "PENDING",
+        "REVIEWING",
+        "APPROVED",
+        "REJECTED",
+        "COMPLETED"
+      ],
+      "initialState": "PENDING",
+      "transitions": [
+        {
+          "fromState": "PENDING",
+          "toState": "REVIEWING",
+          "policyRef": null,
+          "guardExpression": "amount < 10000"
+        },
+        {
+          "fromState": "REVIEWING",
+          "toState": "APPROVED",
+          "policyRef": "",
+          "guardExpression": "approverCount >= 1"
+        },
+        {
+          "fromState": "REVIEWING",
+          "toState": "REJECTED",
+          "policyRef": null,
+          "guardExpression": "!approved"
+        },
+        {
+          "fromState": "APPROVED",
+          "toState": "COMPLETED",
+          "policyRef": "",
+          "guardExpression": null
+        }
+      ],
+      "createdAt": "2026-02-07T10:52:41.594390Z",
+      "updatedAt": "2026-02-07T10:52:41.594390Z"
+    },
+    {
+      "id": "a2cbbc21-159e-4260-9122-d4424c91bfe1",
+      "name": "Simple Two-State Workflow",
+      "version": 1,
+      "status": "DRAFT",
+      "states": [
+        "START",
+        "END"
+      ],
+      "initialState": "START",
+      "transitions": [
+        {
+          "fromState": "START",
+          "toState": "END",
+          "policyRef": null,
+          "guardExpression": "completed == true"
+        }
+      ],
+      "createdAt": "2026-02-07T10:52:41.701928Z",
+      "updatedAt": "2026-02-07T10:52:41.701928Z"
+    },
+    {
+      "id": "3e436f8f-945b-4ae4-b0a1-ca79fdecaa9f",
+      "name": "Order Approval Workflow",
+      "version": 1,
+      "status": "DRAFT",
+      "states": [
+        "PENDING",
+        "REVIEWING",
+        "APPROVED",
+        "REJECTED",
+        "COMPLETED"
+      ],
+      "initialState": "PENDING",
+      "transitions": [
+        {
+          "fromState": "PENDING",
+          "toState": "REVIEWING",
+          "policyRef": null,
+          "guardExpression": "amount < 10000"
+        },
+        {
+          "fromState": "REVIEWING",
+          "toState": "APPROVED",
+          "policyRef": "",
+          "guardExpression": "approverCount >= 1"
+        },
+        {
+          "fromState": "REVIEWING",
+          "toState": "REJECTED",
+          "policyRef": null,
+          "guardExpression": "!approved"
+        },
+        {
+          "fromState": "APPROVED",
+          "toState": "COMPLETED",
+          "policyRef": "",
+          "guardExpression": null
+        }
+      ],
+      "createdAt": "2026-02-07T10:53:39.686938Z",
+      "updatedAt": "2026-02-07T10:53:39.686938Z"
+    },
+    {
+      "id": "05a85034-ebee-48e1-95c8-2ea222090378",
+      "name": "Simple Two-State Workflow",
+      "version": 1,
+      "status": "DRAFT",
+      "states": [
+        "START",
+        "END"
+      ],
+      "initialState": "START",
+      "transitions": [
+        {
+          "fromState": "START",
+          "toState": "END",
+          "policyRef": null,
+          "guardExpression": "completed == true"
+        }
+      ],
+      "createdAt": "2026-02-07T10:53:39.742793Z",
+      "updatedAt": "2026-02-07T10:53:39.742793Z"
+    },
+    {
+      "id": "efac8e93-6f31-452c-8778-6d7169454c70",
+      "name": "Order Approval Workflow",
+      "version": 1,
+      "status": "DRAFT",
+      "states": [
+        "PENDING",
+        "REVIEWING",
+        "APPROVED",
+        "REJECTED",
+        "COMPLETED"
+      ],
+      "initialState": "PENDING",
+      "transitions": [
+        {
+          "fromState": "PENDING",
+          "toState": "REVIEWING",
+          "policyRef": null,
+          "guardExpression": "amount < 10000"
+        },
+        {
+          "fromState": "REVIEWING",
+          "toState": "APPROVED",
+          "policyRef": "",
+          "guardExpression": "approverCount >= 1"
+        },
+        {
+          "fromState": "REVIEWING",
+          "toState": "REJECTED",
+          "policyRef": null,
+          "guardExpression": "!approved"
+        },
+        {
+          "fromState": "APPROVED",
+          "toState": "COMPLETED",
+          "policyRef": "",
+          "guardExpression": null
+        }
+      ],
+      "createdAt": "2026-02-07T12:08:21.753122Z",
+      "updatedAt": "2026-02-07T12:08:21.753122Z"
+    },
+    {
+      "id": "7d0c0e7c-d602-4b80-ae94-9de7caace892",
+      "name": "Simple Two-State Workflow",
+      "version": 1,
+      "status": "DRAFT",
+      "states": [
+        "START",
+        "END"
+      ],
+      "initialState": "START",
+      "transitions": [
+        {
+          "fromState": "START",
+          "toState": "END",
+          "policyRef": null,
+          "guardExpression": "completed == true"
+        }
+      ],
+      "createdAt": "2026-02-07T12:08:21.854423Z",
+      "updatedAt": "2026-02-07T12:08:21.854423Z"
+    },
+    {
+      "id": "151fad74-467a-4816-a177-dff9e21eca11",
+      "name": "Order Approval Workflow",
+      "version": 1,
+      "status": "DRAFT",
+      "states": [
+        "PENDING",
+        "REVIEWING",
+        "APPROVED",
+        "REJECTED",
+        "COMPLETED"
+      ],
+      "initialState": "PENDING",
+      "transitions": [
+        {
+          "fromState": "PENDING",
+          "toState": "REVIEWING",
+          "policyRef": null,
+          "guardExpression": "amount < 10000"
+        },
+        {
+          "fromState": "REVIEWING",
+          "toState": "APPROVED",
+          "policyRef": "402042d0-6900-400f-85e4-5ce8cc59ece4",
+          "guardExpression": "approverCount >= 1"
+        },
+        {
+          "fromState": "REVIEWING",
+          "toState": "REJECTED",
+          "policyRef": null,
+          "guardExpression": "!approved"
+        },
+        {
+          "fromState": "APPROVED",
+          "toState": "COMPLETED",
+          "policyRef": "6357f2de-fab3-462f-87fd-05d69e6eb713",
+          "guardExpression": null
+        }
+      ],
+      "createdAt": "2026-02-07T12:09:29.783380Z",
+      "updatedAt": "2026-02-07T12:09:29.783380Z"
+    },
+    {
+      "id": "82d3e544-acbb-46d9-a2a1-a211e59e143e",
+      "name": "Simple Two-State Workflow",
+      "version": 1,
+      "status": "DRAFT",
+      "states": [
+        "START",
+        "END"
+      ],
+      "initialState": "START",
+      "transitions": [
+        {
+          "fromState": "START",
+          "toState": "END",
+          "policyRef": null,
+          "guardExpression": "completed == true"
+        }
+      ],
+      "createdAt": "2026-02-07T12:09:29.859393Z",
+      "updatedAt": "2026-02-07T12:09:29.859393Z"
+    },
+    {
+      "id": "2babda29-cd3b-4801-b761-bab0bc524b1b",
+      "name": "Simple Two-State Workflow",
+      "version": 1,
+      "status": "DRAFT",
+      "states": [
+        "START",
+        "END"
+      ],
+      "initialState": "START",
+      "transitions": [
+        {
+          "fromState": "START",
+          "toState": "END",
+          "policyRef": null,
+          "guardExpression": "completed == true"
+        }
+      ],
+      "createdAt": "2026-02-07T12:17:24.315607Z",
+      "updatedAt": "2026-02-07T12:17:24.315607Z"
+    }
+  ],
+  "pageable": {
+    "pageNumber": 0,
+    "pageSize": 10,
+    "sort": {
+      "empty": true,
+      "sorted": false,
+      "unsorted": true
+    },
+    "offset": 0,
+    "paged": true,
+    "unpaged": false
+  },
+  "totalPages": 2,
+  "totalElements": 15,
+  "last": false,
+  "size": 10,
+  "number": 0,
+  "numberOfElements": 10,
+  "sort": {
+    "empty": true,
+    "sorted": false,
+    "unsorted": true
+  },
+  "first": true,
+  "empty": false
+}
+
+==========================================
+🔹 10-get-workflow-by-id
+==========================================
+Method: GET
+URL: http://localhost:8081/api/v1/workflows/427536a1-b6f5-44d4-9808-7794d7ca3347
+Status Code: 200
+Request/response saved to: ./api-test-results/10-get-workflow-by-id.json
+Response:
+{
+  "id": "427536a1-b6f5-44d4-9808-7794d7ca3347",
+  "name": "Order Approval Workflow",
+  "version": 1,
+  "status": "DRAFT",
+  "states": [
+    "PENDING",
+    "REVIEWING",
+    "APPROVED",
+    "REJECTED",
+    "COMPLETED"
+  ],
+  "initialState": "PENDING",
+  "transitions": [
+    {
+      "fromState": "PENDING",
+      "toState": "REVIEWING",
+      "policyRef": null,
+      "guardExpression": "amount < 10000"
+    },
+    {
+      "fromState": "REVIEWING",
+      "toState": "APPROVED",
+      "policyRef": "2cece933-5280-4811-896d-e09545e8117c",
+      "guardExpression": "approverCount >= 1"
+    },
+    {
+      "fromState": "REVIEWING",
+      "toState": "REJECTED",
+      "policyRef": null,
+      "guardExpression": "!approved"
+    },
+    {
+      "fromState": "APPROVED",
+      "toState": "COMPLETED",
+      "policyRef": "f4001f62-aa69-42e1-9436-8860d3a7b727",
+      "guardExpression": null
+    }
+  ],
+  "createdAt": "2026-02-07T12:37:52.605804Z",
+  "updatedAt": "2026-02-07T12:37:52.605804Z"
+}
+
+==========================================
+🔹 11-publish-workflow
+==========================================
+Method: POST
+URL: http://localhost:8081/api/v1/workflows/427536a1-b6f5-44d4-9808-7794d7ca3347/publish
+Status Code: 200
+Request/response saved to: ./api-test-results/11-publish-workflow.json
+Response:
+{
+  "id": "427536a1-b6f5-44d4-9808-7794d7ca3347",
+  "name": "Order Approval Workflow",
+  "version": 2,
+  "status": "PUBLISHED",
+  "states": [
+    "PENDING",
+    "REVIEWING",
+    "APPROVED",
+    "REJECTED",
+    "COMPLETED"
+  ],
+  "initialState": "PENDING",
+  "transitions": [
+    {
+      "fromState": "PENDING",
+      "toState": "REVIEWING",
+      "policyRef": null,
+      "guardExpression": "amount < 10000"
+    },
+    {
+      "fromState": "REVIEWING",
+      "toState": "APPROVED",
+      "policyRef": "2cece933-5280-4811-896d-e09545e8117c",
+      "guardExpression": "approverCount >= 1"
+    },
+    {
+      "fromState": "REVIEWING",
+      "toState": "REJECTED",
+      "policyRef": null,
+      "guardExpression": "!approved"
+    },
+    {
+      "fromState": "APPROVED",
+      "toState": "COMPLETED",
+      "policyRef": "f4001f62-aa69-42e1-9436-8860d3a7b727",
+      "guardExpression": null
+    }
+  ],
+  "createdAt": "2026-02-07T12:37:52.605804Z",
+  "updatedAt": "2026-02-07T12:37:52.875717894Z"
+}
+
+==========================================
+🔹 12-get-workflow-version-1
+==========================================
+Method: GET
+URL: http://localhost:8081/api/v1/workflows/427536a1-b6f5-44d4-9808-7794d7ca3347/versions/1
+Status Code: 200
+Request/response saved to: ./api-test-results/12-get-workflow-version-1.json
+Response:
+{
+  "id": "427536a1-b6f5-44d4-9808-7794d7ca3347",
+  "name": "Order Approval Workflow",
+  "version": 1,
+  "status": "DRAFT",
+  "states": [
+    "PENDING",
+    "REVIEWING",
+    "APPROVED",
+    "REJECTED",
+    "COMPLETED"
+  ],
+  "initialState": "PENDING",
+  "transitions": [
+    {
+      "fromState": "PENDING",
+      "toState": "REVIEWING",
+      "policyRef": null,
+      "guardExpression": "amount < 10000"
+    },
+    {
+      "fromState": "REVIEWING",
+      "toState": "APPROVED",
+      "policyRef": "2cece933-5280-4811-896d-e09545e8117c",
+      "guardExpression": "approverCount >= 1"
+    },
+    {
+      "fromState": "REVIEWING",
+      "toState": "REJECTED",
+      "policyRef": null,
+      "guardExpression": "!approved"
+    },
+    {
+      "fromState": "APPROVED",
+      "toState": "COMPLETED",
+      "policyRef": "f4001f62-aa69-42e1-9436-8860d3a7b727",
+      "guardExpression": null
+    }
+  ],
+  "createdAt": "2026-02-07T12:37:52.605804Z",
+  "updatedAt": "2026-02-07T12:37:52.605804Z"
+}
+
+==========================================
+🔹 13-list-workflows-page-1
+==========================================
+Method: GET
+URL: http://localhost:8081/api/v1/workflows?page=1&size=5
+Status Code: 200
+Request/response saved to: ./api-test-results/13-list-workflows-page-1.json
+Response:
+{
+  "content": [
+    {
+      "id": "efac8e93-6f31-452c-8778-6d7169454c70",
+      "name": "Order Approval Workflow",
+      "version": 1,
+      "status": "DRAFT",
+      "states": [
+        "PENDING",
+        "REVIEWING",
+        "APPROVED",
+        "REJECTED",
+        "COMPLETED"
+      ],
+      "initialState": "PENDING",
+      "transitions": [
+        {
+          "fromState": "PENDING",
+          "toState": "REVIEWING",
+          "policyRef": null,
+          "guardExpression": "amount < 10000"
+        },
+        {
+          "fromState": "REVIEWING",
+          "toState": "APPROVED",
+          "policyRef": "",
+          "guardExpression": "approverCount >= 1"
+        },
+        {
+          "fromState": "REVIEWING",
+          "toState": "REJECTED",
+          "policyRef": null,
+          "guardExpression": "!approved"
+        },
+        {
+          "fromState": "APPROVED",
+          "toState": "COMPLETED",
+          "policyRef": "",
+          "guardExpression": null
+        }
+      ],
+      "createdAt": "2026-02-07T12:08:21.753122Z",
+      "updatedAt": "2026-02-07T12:08:21.753122Z"
+    },
+    {
+      "id": "7d0c0e7c-d602-4b80-ae94-9de7caace892",
+      "name": "Simple Two-State Workflow",
+      "version": 1,
+      "status": "DRAFT",
+      "states": [
+        "START",
+        "END"
+      ],
+      "initialState": "START",
+      "transitions": [
+        {
+          "fromState": "START",
+          "toState": "END",
+          "policyRef": null,
+          "guardExpression": "completed == true"
+        }
+      ],
+      "createdAt": "2026-02-07T12:08:21.854423Z",
+      "updatedAt": "2026-02-07T12:08:21.854423Z"
+    },
+    {
+      "id": "151fad74-467a-4816-a177-dff9e21eca11",
+      "name": "Order Approval Workflow",
+      "version": 1,
+      "status": "DRAFT",
+      "states": [
+        "PENDING",
+        "REVIEWING",
+        "APPROVED",
+        "REJECTED",
+        "COMPLETED"
+      ],
+      "initialState": "PENDING",
+      "transitions": [
+        {
+          "fromState": "PENDING",
+          "toState": "REVIEWING",
+          "policyRef": null,
+          "guardExpression": "amount < 10000"
+        },
+        {
+          "fromState": "REVIEWING",
+          "toState": "APPROVED",
+          "policyRef": "402042d0-6900-400f-85e4-5ce8cc59ece4",
+          "guardExpression": "approverCount >= 1"
+        },
+        {
+          "fromState": "REVIEWING",
+          "toState": "REJECTED",
+          "policyRef": null,
+          "guardExpression": "!approved"
+        },
+        {
+          "fromState": "APPROVED",
+          "toState": "COMPLETED",
+          "policyRef": "6357f2de-fab3-462f-87fd-05d69e6eb713",
+          "guardExpression": null
+        }
+      ],
+      "createdAt": "2026-02-07T12:09:29.783380Z",
+      "updatedAt": "2026-02-07T12:09:29.783380Z"
+    },
+    {
+      "id": "82d3e544-acbb-46d9-a2a1-a211e59e143e",
+      "name": "Simple Two-State Workflow",
+      "version": 1,
+      "status": "DRAFT",
+      "states": [
+        "START",
+        "END"
+      ],
+      "initialState": "START",
+      "transitions": [
+        {
+          "fromState": "START",
+          "toState": "END",
+          "policyRef": null,
+          "guardExpression": "completed == true"
+        }
+      ],
+      "createdAt": "2026-02-07T12:09:29.859393Z",
+      "updatedAt": "2026-02-07T12:09:29.859393Z"
+    },
+    {
+      "id": "2babda29-cd3b-4801-b761-bab0bc524b1b",
+      "name": "Simple Two-State Workflow",
+      "version": 1,
+      "status": "DRAFT",
+      "states": [
+        "START",
+        "END"
+      ],
+      "initialState": "START",
+      "transitions": [
+        {
+          "fromState": "START",
+          "toState": "END",
+          "policyRef": null,
+          "guardExpression": "completed == true"
+        }
+      ],
+      "createdAt": "2026-02-07T12:17:24.315607Z",
+      "updatedAt": "2026-02-07T12:17:24.315607Z"
+    }
+  ],
+  "pageable": {
+    "pageNumber": 1,
+    "pageSize": 5,
+    "sort": {
+      "empty": true,
+      "sorted": false,
+      "unsorted": true
+    },
+    "offset": 5,
+    "paged": true,
+    "unpaged": false
+  },
+  "totalPages": 3,
+  "totalElements": 15,
+  "last": false,
+  "size": 5,
+  "number": 1,
+  "numberOfElements": 5,
+  "sort": {
+    "empty": true,
+    "sorted": false,
+    "unsorted": true
+  },
+  "first": false,
+  "empty": false
+}
+
+==========================================
+🔹 14-list-policies-page-1
+==========================================
+Method: GET
+URL: http://localhost:8081/api/v1/policies?page=1&size=5
+Status Code: 200
+Request/response saved to: ./api-test-results/14-list-policies-page-1.json
+Response:
+{
+  "content": [
+    {
+      "id": "402042d0-6900-400f-85e4-5ce8cc59ece4",
+      "name": "High Value Order Policy",
+      "version": 1,
+      "status": "DRAFT",
+      "conditions": [
+        {
+          "field": "amount",
+          "operator": "GT",
+          "value": "1000"
+        },
+        {
+          "field": "customerType",
+          "operator": "EQ",
+          "value": "PREMIUM"
+        }
+      ],
+      "createdAt": "2026-02-07T12:09:29.324915Z"
+    },
+    {
+      "id": "6357f2de-fab3-462f-87fd-05d69e6eb713",
+      "name": "Shipping Eligibility Policy",
+      "version": 1,
+      "status": "DRAFT",
+      "conditions": [
+        {
+          "field": "destination",
+          "operator": "IN",
+          "value": "USA,CANADA,MEXICO"
+        },
+        {
+          "field": "weight",
+          "operator": "LT",
+          "value": "50"
+        },
+        {
+          "field": "hazardous",
+          "operator": "EQ",
+          "value": "false"
+        }
+      ],
+      "createdAt": "2026-02-07T12:09:29.405463Z"
+    },
+    {
+      "id": "7b176d59-4929-4e1a-adf7-4fa8745c2775",
+      "name": "Shipping Eligibility Policy",
+      "version": 1,
+      "status": "DRAFT",
+      "conditions": [
+        {
+          "field": "destination",
+          "operator": "IN",
+          "value": "USA,CANADA,MEXICO"
+        },
+        {
+          "field": "weight",
+          "operator": "LT",
+          "value": "50"
+        },
+        {
+          "field": "hazardous",
+          "operator": "EQ",
+          "value": "false"
+        }
+      ],
+      "createdAt": "2026-02-07T12:17:23.670646Z"
+    },
+    {
+      "id": "4e3dc9a9-8dcd-4f86-94c1-db9ecdad9d9e",
+      "name": "High Value Order Policy",
+      "version": 2,
+      "status": "PUBLISHED",
+      "conditions": [
+        {
+          "field": "amount",
+          "operator": "GT",
+          "value": "1000"
+        },
+        {
+          "field": "customerType",
+          "operator": "EQ",
+          "value": "PREMIUM"
+        }
+      ],
+      "createdAt": "2026-02-07T12:17:23.511758Z"
+    },
+    {
+      "id": "0941f7f7-f1fe-4e94-9845-60574e351923",
+      "name": "Shipping Eligibility Policy",
+      "version": 1,
+      "status": "DRAFT",
+      "conditions": [
+        {
+          "field": "destination",
+          "operator": "IN",
+          "value": "USA,CANADA,MEXICO"
+        },
+        {
+          "field": "weight",
+          "operator": "LT",
+          "value": "50"
+        },
+        {
+          "field": "hazardous",
+          "operator": "EQ",
+          "value": "false"
+        }
+      ],
+      "createdAt": "2026-02-07T12:32:05.052957Z"
+    }
+  ],
+  "pageable": {
+    "pageNumber": 1,
+    "pageSize": 5,
+    "sort": {
+      "empty": true,
+      "sorted": false,
+      "unsorted": true
+    },
+    "offset": 5,
+    "paged": true,
+    "unpaged": false
+  },
+  "totalPages": 3,
+  "totalElements": 13,
+  "last": false,
+  "size": 5,
+  "number": 1,
+  "numberOfElements": 5,
+  "sort": {
+    "empty": true,
+    "sorted": false,
+    "unsorted": true
+  },
+  "first": false,
+  "empty": false
+}
+
+╔════════════════════════════════════════════════════════╗
+║             ACTUATOR/MONITORING ENDPOINTS              ║
+╚════════════════════════════════════════════════════════╝
+
+==========================================
+🔹 15-actuator-info
+==========================================
+Method: GET
+URL: http://localhost:8081/actuator/info
+Status Code: 200
+Request/response saved to: ./api-test-results/15-actuator-info.json
+Response:
+{
+  "grpc.server": {
+    "port": 9090,
+    "services": {
+      "definition.v1.DefinitionService": [
+        "EvaluatePolicy",
+        "GetPolicy",
+        "GetWorkflow"
+      ],
+      "grpc.health.v1.Health": [
+        "Check",
+        "Watch"
+      ],
+      "grpc.reflection.v1alpha.ServerReflection": [
+        "ServerReflectionInfo"
+      ]
+    }
+  }
+}
+
+==========================================
+🔹 16-actuator-metrics
+==========================================
+Method: GET
+URL: http://localhost:8081/actuator/metrics
+Status Code: 200
+Request/response saved to: ./api-test-results/16-actuator-metrics.json
+Response:
+{
+  "names": [
+    "application.ready.time",
+    "application.started.time",
+    "disk.free",
+    "disk.total",
+    "grpc.server.processing.duration",
+    "grpc.server.requests.received",
+    "grpc.server.responses.sent",
+    "hikaricp.connections",
+    "hikaricp.connections.acquire",
+    "hikaricp.connections.active",
+    "hikaricp.connections.creation",
+    "hikaricp.connections.idle",
+    "hikaricp.connections.max",
+    "hikaricp.connections.min",
+    "hikaricp.connections.pending",
+    "hikaricp.connections.timeout",
+    "hikaricp.connections.usage",
+    "http.server.requests",
+    "http.server.requests.active",
+    "jdbc.connections.active",
+    "jdbc.connections.idle",
+    "jdbc.connections.max",
+    "jdbc.connections.min",
+    "jvm.buffer.count",
+    "jvm.buffer.memory.used",
+    "jvm.buffer.total.capacity",
+    "jvm.classes.loaded",
+    "jvm.classes.unloaded",
+    "jvm.compilation.time",
+    "jvm.gc.live.data.size",
+    "jvm.gc.max.data.size",
+    "jvm.gc.memory.allocated",
+    "jvm.gc.memory.promoted",
+    "jvm.gc.overhead",
+    "jvm.info",
+    "jvm.memory.committed",
+    "jvm.memory.max",
+    "jvm.memory.usage.after.gc",
+    "jvm.memory.used",
+    "jvm.threads.daemon",
+    "jvm.threads.live",
+    "jvm.threads.peak",
+    "jvm.threads.started",
+    "jvm.threads.states",
+    "logback.events",
+    "process.cpu.time",
+    "process.cpu.usage",
+    "process.files.max",
+    "process.files.open",
+    "process.start.time",
+    "process.uptime",
+    "spring.data.repository.invocations",
+    "spring.security.authorizations",
+    "spring.security.authorizations.active",
+    "spring.security.filterchains",
+    "spring.security.filterchains.access.exceptions.after",
+    "spring.security.filterchains.access.exceptions.before",
+    "spring.security.filterchains.active",
+    "spring.security.filterchains.authentication.anonymous.after",
+    "spring.security.filterchains.authentication.anonymous.before",
+    "spring.security.filterchains.authorization.after",
+    "spring.security.filterchains.authorization.before",
+    "spring.security.filterchains.context.async.after",
+    "spring.security.filterchains.context.async.before",
+    "spring.security.filterchains.context.holder.after",
+    "spring.security.filterchains.context.holder.before",
+    "spring.security.filterchains.context.servlet.after",
+    "spring.security.filterchains.context.servlet.before",
+    "spring.security.filterchains.header.after",
+    "spring.security.filterchains.header.before",
+    "spring.security.filterchains.logout.after",
+    "spring.security.filterchains.logout.before",
+    "spring.security.filterchains.requestcache.after",
+    "spring.security.filterchains.requestcache.before",
+    "spring.security.filterchains.session.urlencoding.after",
+    "spring.security.filterchains.session.urlencoding.before",
+    "spring.security.http.secured.requests",
+    "spring.security.http.secured.requests.active",
+    "system.cpu.count",
+    "system.cpu.usage",
+    "system.load.average.1m",
+    "tomcat.sessions.active.current",
+    "tomcat.sessions.active.max",
+    "tomcat.sessions.alive.max",
+    "tomcat.sessions.created",
+    "tomcat.sessions.expired",
+    "tomcat.sessions.rejected"
+  ]
+}
+
+==========================================
+🔹 17-actuator-health-liveness
+==========================================
+Method: GET
+URL: http://localhost:8081/actuator/health/liveness
+Status Code: 200
+Request/response saved to: ./api-test-results/17-actuator-health-liveness.json
+Response:
+{
+  "status": "UP"
+}
+
+==========================================
+🔹 18-actuator-health-readiness
+==========================================
+Method: GET
+URL: http://localhost:8081/actuator/health/readiness
+Status Code: 200
+Request/response saved to: ./api-test-results/18-actuator-health-readiness.json
+Response:
+{
+  "status": "UP"
+}
+
+╔════════════════════════════════════════════════════════╗
+║                    TEST SUMMARY                        ║
+╚════════════════════════════════════════════════════════╝
+
+✅ Test execution completed!
+
+📂 Results Location: ./api-test-results
+📋 Log File: ./api-test-results/test-log-20260207_123752.txt
+
+📊 Created Resources:
+   • Policy 1 ID: 2cece933-5280-4811-896d-e09545e8117c
+   • Policy 2 ID: f4001f62-aa69-42e1-9436-8860d3a7b727
+   • Workflow 1 ID: 427536a1-b6f5-44d4-9808-7794d7ca3347
+   • Workflow 2 ID: c848e07b-abcc-410a-a802-d66b26f9faf8
+
+📁 Output Files:
+   • ./api-test-results/00-health-check.json - 1.2K
+   • ./api-test-results/01-create-policy-high-value.json - 995
+   • ./api-test-results/02-create-policy-shipping.json - 1.3K
+   • ./api-test-results/03-list-policies-page-0.json - 6.6K
+   • ./api-test-results/04-get-policy-by-id.json - 730
+   • ./api-test-results/05-publish-policy.json - 741
+   • ./api-test-results/06-get-policy-version-1.json - 745
+   • ./api-test-results/07-create-workflow-order-approval.json - 2.3K
+   • ./api-test-results/08-create-workflow-simple.json - 1.1K
+   • ./api-test-results/09-list-workflows-page-0.json - 9.8K
+   • ./api-test-results/10-get-workflow-by-id.json - 1.5K
+   • ./api-test-results/11-publish-workflow.json - 1.5K
+   • ./api-test-results/12-get-workflow-version-1.json - 1.5K
+   • ./api-test-results/13-list-workflows-page-1.json - 5.2K
+   • ./api-test-results/14-list-policies-page-1.json - 3.8K
+   • ./api-test-results/15-actuator-info.json - 674
+   • ./api-test-results/16-actuator-metrics.json - 3.8K
+   • ./api-test-results/17-actuator-health-liveness.json - 297
+   • ./api-test-results/18-actuator-health-readiness.json - 299
+
+🔍 View results:
+   cat ./api-test-results/*.json
+   cat ./api-test-results/test-log-20260207_123752.txt
+
+═══════════════════════════════════════════════════════════
+Definition Service API Test Summary
+====================================
+Timestamp: Sat Feb  7 12:37:53 UTC 2026
+
+Created Resources:
+  Policy 1: 2cece933-5280-4811-896d-e09545e8117c (High Value Order Policy)
+  Policy 2: f4001f62-aa69-42e1-9436-8860d3a7b727 (Shipping Eligibility Policy)
+  Workflow 1: 427536a1-b6f5-44d4-9808-7794d7ca3347 (Order Approval Workflow)
+  Workflow 2: c848e07b-abcc-410a-a802-d66b26f9faf8 (Simple Two-State Workflow)
+
+Test Files Generated:
+  Total Response Files: 19
+
+See ./api-test-results/test-log-20260207_123752.txt for detailed execution log

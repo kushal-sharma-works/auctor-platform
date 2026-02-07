@@ -3,7 +3,7 @@
     "name": "02-create-policy-shipping",
     "method": "POST",
     "url": "http://localhost:8081/api/v1/policies",
-    "timestamp": "Sat Feb  7 12:32:05 UTC 2026",
+    "timestamp": "Sat Feb  7 12:37:52 UTC 2026",
     "body": {
       "name": "Shipping Eligibility Policy",
       "conditions": [
@@ -28,7 +28,7 @@
   "response": {
     "status": "201",
     "body": {
-      "id": "0941f7f7-f1fe-4e94-9845-60574e351923",
+      "id": "f4001f62-aa69-42e1-9436-8860d3a7b727",
       "name": "Shipping Eligibility Policy",
       "version": 1,
       "status": "DRAFT",
@@ -49,7 +49,7 @@
           "value": "false"
         }
       ],
-      "createdAt": "2026-02-07T12:32:05.052957314Z"
+      "createdAt": "2026-02-07T12:37:52.294906455Z"
     }
   }
 }

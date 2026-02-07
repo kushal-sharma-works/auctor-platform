@@ -35,6 +35,5 @@ public interface WorkflowJpaRepository extends JpaRepository<WorkflowJpaEntity, 
     /**
      * Find the latest published version of a workflow.
      */
-    @Query("SELECT w FROM WorkflowJpaEntity w WHERE w.id = :id AND w.status = 'PUBLISHED' ORDER BY w.version DESC LIMIT 1")
-    Optional<WorkflowJpaEntity> findLatestPublishedById(@Param("id") String id);
+    Optional<WorkflowJpaEntity> findFirstByIdAndStatusOrderByVersionDesc(String id, String status);
 }
