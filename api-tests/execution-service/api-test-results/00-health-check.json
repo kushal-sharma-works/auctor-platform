@@ -1,0 +1,13 @@
+{
+  "request": {
+    "name": "00-health-check",
+    "method": "GET",
+    "url": "http://localhost:8082/health",
+    "timestamp": "Sat Feb  7 20:37:24 UTC 2026",
+    "body": null
+  },
+  "response": {
+    "status": "200",
+    "body": "OK"
+  }
+}

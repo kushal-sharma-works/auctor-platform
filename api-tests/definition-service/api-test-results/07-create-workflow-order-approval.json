@@ -3,7 +3,7 @@
     "name": "07-create-workflow-order-approval",
     "method": "POST",
     "url": "http://localhost:8081/api/v1/workflows",
-    "timestamp": "Sat Feb  7 12:37:52 UTC 2026",
+    "timestamp": "Sat Feb  7 19:50:40 UTC 2026",
     "body": {
       "name": "Order Approval Workflow",
       "states": [
@@ -23,7 +23,7 @@
         {
           "fromState": "REVIEWING",
           "toState": "APPROVED",
-          "policyRef": "2cece933-5280-4811-896d-e09545e8117c",
+          "policyRef": "9da1c1a0-a13e-4b79-a6cb-f474b132f09c",
           "guardExpression": "approverCount >= 1"
         },
         {
@@ -34,7 +34,7 @@
         {
           "fromState": "APPROVED",
           "toState": "COMPLETED",
-          "policyRef": "f4001f62-aa69-42e1-9436-8860d3a7b727"
+          "policyRef": "4bbb99f8-2f29-4826-8070-7cc9df36e44a"
         }
       ]
     }
@@ -42,7 +42,7 @@
   "response": {
     "status": "201",
     "body": {
-      "id": "427536a1-b6f5-44d4-9808-7794d7ca3347",
+      "id": "8c9f959c-c8c5-4b38-90ef-e82a2d647893",
       "name": "Order Approval Workflow",
       "version": 1,
       "status": "DRAFT",
@@ -64,7 +64,7 @@
         {
           "fromState": "REVIEWING",
           "toState": "APPROVED",
-          "policyRef": "2cece933-5280-4811-896d-e09545e8117c",
+          "policyRef": "9da1c1a0-a13e-4b79-a6cb-f474b132f09c",
           "guardExpression": "approverCount >= 1"
         },
         {
@@ -76,12 +76,12 @@
         {
           "fromState": "APPROVED",
           "toState": "COMPLETED",
-          "policyRef": "f4001f62-aa69-42e1-9436-8860d3a7b727",
+          "policyRef": "4bbb99f8-2f29-4826-8070-7cc9df36e44a",
           "guardExpression": null
         }
       ],
-      "createdAt": "2026-02-07T12:37:52.605803659Z",
-      "updatedAt": "2026-02-07T12:37:52.605803659Z"
+      "createdAt": "2026-02-07T19:50:40.734055106Z",
+      "updatedAt": "2026-02-07T19:50:40.734055106Z"
     }
   }
 }

@@ -12,6 +12,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./infra/docker/postgres/initdb:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U definition"]
       interval: 5s
@@ -41,8 +42,16 @@ services:
     build: ./services/execution-service
     ports:
       - "8082:8082"
+    environment:
+      - EXECUTION_DB_URL=jdbc:postgresql://postgres:5432/execution
+      - EXECUTION_DB_USER=execution
+      - EXECUTION_DB_PASSWORD=execution
+      - EXECUTION_GRPC_HOST=definition-service
+      - EXECUTION_GRPC_PORT=9090
+      - EXECUTION_REDIS_URL=redis://redis:6379
     depends_on:
       - definition-service
+      - postgres
 
   web:
     build: ./web

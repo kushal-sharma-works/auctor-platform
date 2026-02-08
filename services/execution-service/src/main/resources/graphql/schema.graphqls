@@ -1,10 +1,12 @@
 # schema.graphqls
 type Query {
-  getDefinition(id: ID!): Definition
+  getWorkflow(id: ID!, version: Int!): Workflow
 }
 
-type Definition {
+type Workflow {
   id: ID!
   name: String!
   description: String
+  version: Int!
+  states: [String!]!
 }

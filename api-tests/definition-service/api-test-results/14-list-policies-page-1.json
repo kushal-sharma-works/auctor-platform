@@ -3,124 +3,13 @@
     "name": "14-list-policies-page-1",
     "method": "GET",
     "url": "http://localhost:8081/api/v1/policies?page=1&size=5",
-    "timestamp": "Sat Feb  7 12:37:53 UTC 2026",
+    "timestamp": "Sat Feb  7 19:50:41 UTC 2026",
     "body": null
   },
   "response": {
     "status": "200",
     "body": {
-      "content": [
-        {
-          "id": "402042d0-6900-400f-85e4-5ce8cc59ece4",
-          "name": "High Value Order Policy",
-          "version": 1,
-          "status": "DRAFT",
-          "conditions": [
-            {
-              "field": "amount",
-              "operator": "GT",
-              "value": "1000"
-            },
-            {
-              "field": "customerType",
-              "operator": "EQ",
-              "value": "PREMIUM"
-            }
-          ],
-          "createdAt": "2026-02-07T12:09:29.324915Z"
-        },
-        {
-          "id": "6357f2de-fab3-462f-87fd-05d69e6eb713",
-          "name": "Shipping Eligibility Policy",
-          "version": 1,
-          "status": "DRAFT",
-          "conditions": [
-            {
-              "field": "destination",
-              "operator": "IN",
-              "value": "USA,CANADA,MEXICO"
-            },
-            {
-              "field": "weight",
-              "operator": "LT",
-              "value": "50"
-            },
-            {
-              "field": "hazardous",
-              "operator": "EQ",
-              "value": "false"
-            }
-          ],
-          "createdAt": "2026-02-07T12:09:29.405463Z"
-        },
-        {
-          "id": "7b176d59-4929-4e1a-adf7-4fa8745c2775",
-          "name": "Shipping Eligibility Policy",
-          "version": 1,
-          "status": "DRAFT",
-          "conditions": [
-            {
-              "field": "destination",
-              "operator": "IN",
-              "value": "USA,CANADA,MEXICO"
-            },
-            {
-              "field": "weight",
-              "operator": "LT",
-              "value": "50"
-            },
-            {
-              "field": "hazardous",
-              "operator": "EQ",
-              "value": "false"
-            }
-          ],
-          "createdAt": "2026-02-07T12:17:23.670646Z"
-        },
-        {
-          "id": "4e3dc9a9-8dcd-4f86-94c1-db9ecdad9d9e",
-          "name": "High Value Order Policy",
-          "version": 2,
-          "status": "PUBLISHED",
-          "conditions": [
-            {
-              "field": "amount",
-              "operator": "GT",
-              "value": "1000"
-            },
-            {
-              "field": "customerType",
-              "operator": "EQ",
-              "value": "PREMIUM"
-            }
-          ],
-          "createdAt": "2026-02-07T12:17:23.511758Z"
-        },
-        {
-          "id": "0941f7f7-f1fe-4e94-9845-60574e351923",
-          "name": "Shipping Eligibility Policy",
-          "version": 1,
-          "status": "DRAFT",
-          "conditions": [
-            {
-              "field": "destination",
-              "operator": "IN",
-              "value": "USA,CANADA,MEXICO"
-            },
-            {
-              "field": "weight",
-              "operator": "LT",
-              "value": "50"
-            },
-            {
-              "field": "hazardous",
-              "operator": "EQ",
-              "value": "false"
-            }
-          ],
-          "createdAt": "2026-02-07T12:32:05.052957Z"
-        }
-      ],
+      "content": [],
       "pageable": {
         "pageNumber": 1,
         "pageSize": 5,
@@ -133,19 +22,19 @@
         "paged": true,
         "unpaged": false
       },
-      "totalPages": 3,
-      "totalElements": 13,
-      "last": false,
+      "totalPages": 1,
+      "totalElements": 3,
+      "last": true,
       "size": 5,
       "number": 1,
-      "numberOfElements": 5,
+      "numberOfElements": 0,
       "sort": {
         "empty": true,
         "sorted": false,
         "unsorted": true
       },
       "first": false,
-      "empty": false
+      "empty": true
     }
   }
 }

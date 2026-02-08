@@ -4,7 +4,7 @@
 # This script generates a valid JWT token for testing
 
 # JWT Configuration
-SECRET="dev-secret-change-later"
+SECRET="local-dev-secret"
 ISSUER="auctor-auth"
 AUDIENCE="execution-service"
 SUBJECT="test-user"

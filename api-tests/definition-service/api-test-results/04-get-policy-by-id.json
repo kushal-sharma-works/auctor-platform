@@ -2,14 +2,14 @@
   "request": {
     "name": "04-get-policy-by-id",
     "method": "GET",
-    "url": "http://localhost:8081/api/v1/policies/2cece933-5280-4811-896d-e09545e8117c",
-    "timestamp": "Sat Feb  7 12:37:52 UTC 2026",
+    "url": "http://localhost:8081/api/v1/policies/9da1c1a0-a13e-4b79-a6cb-f474b132f09c",
+    "timestamp": "Sat Feb  7 19:50:40 UTC 2026",
     "body": null
   },
   "response": {
     "status": "200",
     "body": {
-      "id": "2cece933-5280-4811-896d-e09545e8117c",
+      "id": "9da1c1a0-a13e-4b79-a6cb-f474b132f09c",
       "name": "High Value Order Policy",
       "version": 1,
       "status": "DRAFT",
@@ -25,7 +25,7 @@
           "value": "PREMIUM"
         }
       ],
-      "createdAt": "2026-02-07T12:37:52.192053Z"
+      "createdAt": "2026-02-07T19:50:39.823297Z"
     }
   }
 }
