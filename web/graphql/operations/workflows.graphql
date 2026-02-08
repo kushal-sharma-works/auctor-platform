@@ -1,0 +1,64 @@
+query GetWorkflow($id: ID!) {
+  workflow(id: $id) {
+    id
+    name
+    version
+    status
+    states
+    initialState
+    transitions {
+      fromState
+      toState
+      policyRef
+    }
+    createdAt
+    updatedAt
+  }
+}
+
+query ListWorkflows($page: Int, $size: Int) {
+  workflows(page: $page, size: $size) {
+    content {
+      id
+      name
+      version
+      status
+      states
+      initialState
+      createdAt
+      updatedAt
+    }
+    totalElements
+    totalPages
+    page
+    size
+  }
+}
+
+mutation CreateWorkflow($input: CreateWorkflowInput!) {
+  createWorkflow(input: $input) {
+    id
+    name
+    version
+    status
+    states
+    initialState
+    transitions {
+      fromState
+      toState
+      policyRef
+    }
+    createdAt
+    updatedAt
+  }
+}
+
+mutation PublishWorkflow($id: ID!) {
+  publishWorkflow(id: $id) {
+    id
+    name
+    version
+    status
+    updatedAt
+  }
+}
