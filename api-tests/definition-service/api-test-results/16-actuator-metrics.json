@@ -3,7 +3,7 @@
     "name": "16-actuator-metrics",
     "method": "GET",
     "url": "http://localhost:8081/actuator/metrics",
-    "timestamp": "Sat Feb  7 19:50:41 UTC 2026",
+    "timestamp": "Sun Feb  8 10:05:23 UTC 2026",
     "body": null
   },
   "response": {
@@ -44,7 +44,6 @@
         "jvm.gc.memory.allocated",
         "jvm.gc.memory.promoted",
         "jvm.gc.overhead",
-        "jvm.gc.pause",
         "jvm.info",
         "jvm.memory.committed",
         "jvm.memory.max",

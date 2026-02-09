@@ -1,0 +1,59 @@
+query GetPolicy($id: ID!) {
+  policy(id: $id) {
+    id
+    name
+    version
+    status
+    conditions {
+      field
+      operator
+      value
+    }
+    createdAt
+  }
+}
+
+query ListPolicies($page: Int, $size: Int) {
+  policies(page: $page, size: $size) {
+    content {
+      id
+      name
+      version
+      status
+      conditions {
+        field
+        operator
+        value
+      }
+      createdAt
+    }
+    totalElements
+    totalPages
+    page
+    size
+  }
+}
+
+mutation CreatePolicy($input: CreatePolicyInput!) {
+  createPolicy(input: $input) {
+    id
+    name
+    version
+    status
+    conditions {
+      field
+      operator
+      value
+    }
+    createdAt
+  }
+}
+
+mutation PublishPolicy($id: ID!) {
+  publishPolicy(id: $id) {
+    id
+    name
+    version
+    status
+  }
+}

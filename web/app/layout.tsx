@@ -1,26 +1,33 @@
-"use client"
+import { Providers } from "../components/Providers"
+import "./globals.css"
+import { Metadata } from "next"
+import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google"
 
-import { useEffect } from "react"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { Provider } from "react-redux"
-import { store } from "../store"
-import { initTracing } from "../src/observability/tracing"
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+})
 
-const qc = new QueryClient()
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  variable: "--font-mono",
+  display: "swap",
+})
+
+export const metadata: Metadata = {
+  title: "Auctor Platform",
+  description: "Workflow and Policy Management Platform",
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    initTracing()
-  }, [])
-
   return (
-    <html>
-      <body>
-        <Provider store={store}>
-          <QueryClientProvider client={qc}>
-            {children}
-          </QueryClientProvider>
-        </Provider>
+    <html lang="en" className={`${spaceGrotesk.variable} ${plexMono.variable}`} suppressHydrationWarning>
+      <body className="antialiased" suppressHydrationWarning>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   )

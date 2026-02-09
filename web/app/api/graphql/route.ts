@@ -2,7 +2,7 @@ export async function POST(request: Request): Promise<Response> {
   const body = await request.text()
   const authHeader = request.headers.get("authorization")
 
-  const upstreamResponse = await fetch("http://localhost:8082/graphql", {
+  const upstreamResponse = await fetch("http://localhost:8081/graphql", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

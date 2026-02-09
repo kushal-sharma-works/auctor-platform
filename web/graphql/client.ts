@@ -1,37 +1,18 @@
-export async function graphqlRequest<T>(
+import { GraphQLClient } from "graphql-request"
+
+const graphqlClient = new GraphQLClient("/api/graphql")
+
+export async function requestGraphQL<T>(
   query: string,
-  token?: string
+  variables?: Record<string, unknown>,
+  token?: string | null
 ): Promise<T> {
-  try {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json"
-    }
-    
-    if (token) {
-      // Add Bearer prefix if not already present
-      const authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`
-      headers["Authorization"] = authToken
-    }
-    
-    const res = await fetch(process.env.NEXT_PUBLIC_GRAPHQL_URL!, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ query })
-    })
-
-    if (!res.ok) {
-      throw new Error(`GraphQL server error: ${res.status} ${res.statusText}`)
-    }
-
-    const json = await res.json()
-    
-    if (json.errors) {
-      throw new Error(`GraphQL error: ${json.errors.map((e: any) => e.message).join(', ')}`)
-    }
-    
-    return json.data
-  } catch (error) {
-    console.error('GraphQL request failed:', error)
-    throw error
+  if (token) {
+    const authToken = token.startsWith("Bearer ") ? token : `Bearer ${token}`
+    graphqlClient.setHeader("Authorization", authToken)
+  } else {
+    graphqlClient.setHeader("Authorization", "")
   }
+
+  return graphqlClient.request<T>(query, variables)
 }
