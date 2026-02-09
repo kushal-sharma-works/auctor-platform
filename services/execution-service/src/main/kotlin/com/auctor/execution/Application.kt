@@ -7,7 +7,6 @@ import com.auctor.execution.http.installGraphQlRoutes
 import com.auctor.execution.infra.db.ExposedAuditRepository
 import com.auctor.execution.infra.db.ExposedExecutionRepository
 import com.auctor.execution.observability.initTracing
-import com.auctor.execution.security.configureAuth
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.serialization.kotlinx.json.*
@@ -117,9 +116,6 @@ fun Application.module(
 
     // Initialize OpenTelemetry tracing
     val openTelemetry = initTracing()
-
-    // Configure authentication
-    configureAuth()
 
     // Configure routes
     routing {

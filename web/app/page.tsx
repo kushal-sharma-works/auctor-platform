@@ -1,28 +1,45 @@
-"use client"
+import { Suspense } from "react"
+import { Box, VStack, Heading, Text } from "@chakra-ui/react"
+import { Layout } from "../components/Layout"
+import { DashboardClient } from "../components/DashboardClient"
 
-import { useSelector } from "react-redux"
-import { RootState } from "../store"
-import { useDefinitions } from "../hooks/useDefinitions"
-import { DefinitionCard } from "../components/DefinitionCard"
-import { ProtectedRoute } from "../components/ProtectedRoute"
-import { TokenSetter } from "../components/TokenSetter"
+export default function DashboardPage() {
+  return (
+    <Layout>
+      <VStack align="stretch" spacing={8}>
+        {/* Page header */}
+        <Box
+          bg="white"
+          borderRadius="lg"
+          p={8}
+          boxShadow="md"
+          borderLeft="4px solid"
+          borderColor="blue.500"
+        >
+          <Text
+            fontSize="sm"
+            fontWeight="bold"
+            color="blue.700"
+            textTransform="uppercase"
+            letterSpacing="0.1em"
+            mb={2}
+          >
+            Overview
+          </Text>
+          <Heading as="h1" size="2xl" color="blue.900" mb={4}>
+            Workflow & Policy Command Center
+          </Heading>
+          <Text fontSize="md" color="blue.800" maxW="2xl">
+            Monitor the latest definitions and keep tabs on execution readiness across teams. 
+            Beautiful, fast, and actionable.
+          </Text>
+        </Box>
 
-export default function DefinitionsPage() {
-  const token = useSelector((s: RootState) => s.session.token)
-
-  if (!token) {
-    return <TokenSetter />
-  }
-
-  return <DefinitionsPageContent token={token} />
-}
-
-function DefinitionsPageContent({ token }: { token: string }) {
-  const { data, isLoading, error } = useDefinitions(token)
-
-  if (isLoading) return <p>Loading…</p>
-  if (error) return <p>Error: {error.message}</p>
-  if (!data?.getWorkflow) return <p>No workflow found</p>
-
-  return <DefinitionCard def={data.getWorkflow} />
+        {/* Dashboard summary and lists */}
+        <Suspense fallback={<Text fontSize="md" color="blue.700">Loading insights…</Text>}>
+          <DashboardClient />
+        </Suspense>
+      </VStack>
+    </Layout>
+  )
 }

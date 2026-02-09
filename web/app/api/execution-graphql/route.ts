@@ -16,22 +16,9 @@ export async function POST(request: Request): Promise<Response> {
     status: upstreamResponse.status,
     headers: {
       "Content-Type": contentType,
+      "Access-Control-Allow-Origin": "*",
     },
   })
-}
-
-export function GET(): Response {
-  return new Response(
-    JSON.stringify({
-      message: "GraphQL endpoint expects POST requests at /api/graphql"
-    }),
-    {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json"
-      }
-    }
-  )
 }
 
 export function OPTIONS(): Response {

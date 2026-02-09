@@ -1,43 +1,26 @@
+import { GraphQLClient } from "graphql-request"
+
+const definitionClient = new GraphQLClient("/api/definition-graphql")
+const executionClient = new GraphQLClient("/api/execution-graphql")
+
+export async function requestDefinitionGraphQL<T>(
+  query: string,
+  variables?: Record<string, unknown>
+): Promise<T> {
+  return definitionClient.request<T>(query, variables)
+}
+
+export async function requestExecutionGraphQL<T>(
+  query: string,
+  variables?: Record<string, unknown>
+): Promise<T> {
+  return executionClient.request<T>(query, variables)
+}
+
+// Legacy function for backward compatibility
 export async function graphqlRequest<T>(
   query: string,
-  token?: string,
   variables?: Record<string, any>
 ): Promise<T> {
-  try {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json"
-    }
-    
-    if (token) {
-      // Add Bearer prefix if not already present
-      const authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`
-      headers["Authorization"] = authToken
-    }
-    
-    const body: Record<string, any> = { query }
-    if (variables) {
-      body.variables = variables
-    }
-    
-    const res = await fetch(process.env.NEXT_PUBLIC_GRAPHQL_URL!, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body)
-    })
-
-    if (!res.ok) {
-      throw new Error(`GraphQL server error: ${res.status} ${res.statusText}`)
-    }
-
-    const json = await res.json()
-    
-    if (json.errors) {
-      throw new Error(`GraphQL error: ${json.errors.map((e: any) => e.message).join(', ')}`)
-    }
-    
-    return json.data
-  } catch (error) {
-    console.error('GraphQL request failed:', error)
-    throw error
-  }
+  return executionClient.request<T>(query, variables)
 }

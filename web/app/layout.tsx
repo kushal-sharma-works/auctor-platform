@@ -1,27 +1,17 @@
 "use client"
 
-import { useEffect } from "react"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { Provider } from "react-redux"
-import { store } from "../store"
-import { initTracing } from "../src/observability/tracing"
-
-const qc = new QueryClient()
+import { Providers } from "../components/Providers"
+import "./globals.css"
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    initTracing()
-  }, [])
-
   return (
-    <html>
+    <html lang="en">
       <body>
-        <Provider store={store}>
-          <QueryClientProvider client={qc}>
-            {children}
-          </QueryClientProvider>
-        </Provider>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   )
 }
+

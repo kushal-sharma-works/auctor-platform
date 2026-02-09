@@ -1,12 +1,37 @@
-import { Workflow } from "../graphql/types"
+import { Box, Text } from "@chakra-ui/react"
 
-export function DefinitionCard({ def }: { def: Workflow }) {
+export function DefinitionCard({
+  title,
+  value,
+  subtitle,
+}: {
+  title: string
+  value: string
+  subtitle: string
+}) {
   return (
-    <div>
-      <div><strong>Name:</strong> {def.name}</div>
-      <div><strong>ID:</strong> {def.id}</div>
-      <div><strong>Version:</strong> {def.version}</div>
-      <div><strong>States:</strong> {def.states.join(", ")}</div>
-    </div>
+    <Box
+      borderRadius="xl"
+      borderWidth={2}
+      borderColor="gray.200"
+      bg="white"
+      p={8}
+      boxShadow="md"
+      minH="140px"
+      display="flex"
+      flexDirection="column"
+      justifyContent="center"
+      alignItems="flex-start"
+    >
+      <Text fontSize="md" fontWeight="medium" color="gray.500" mb={1}>
+        {title}
+      </Text>
+      <Text fontSize="3xl" fontWeight="bold" color="gray.900" mb={2}>
+        {value}
+      </Text>
+      <Text fontSize="sm" color="gray.500">
+        {subtitle}
+      </Text>
+    </Box>
   )
 }

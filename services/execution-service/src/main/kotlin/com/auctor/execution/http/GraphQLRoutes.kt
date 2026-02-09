@@ -9,7 +9,6 @@ import com.auctor.execution.graphql.GraphQLProvider
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
-import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -55,7 +54,6 @@ fun Route.installGraphQlRoutes(
     }
     
     route("/graphql") {
-        // TEMPORARILY DISABLED FOR TESTING: authenticate("auth-jwt") {
         post {
             // Add CORS headers to response
             call.response.headers.append("Access-Control-Allow-Origin", "*")
@@ -75,7 +73,7 @@ fun Route.installGraphQlRoutes(
                     return@post
                 }
 
-                // Extract Authorization header
+                // Authorization header is optional; auth is disabled in dev
                 val authHeader = call.request.header("Authorization")
                 val context: Map<String, Any>? = authHeader?.let { mapOf("authorization" to it) }
 
@@ -88,7 +86,6 @@ fun Route.installGraphQlRoutes(
                 ))
             }
         }
-        // TEMPORARILY DISABLED FOR TESTING: }
     }
 
     // Health check (no auth required)
@@ -103,9 +100,9 @@ fun Route.installGraphQlRoutes(
         get {
             val authHeader = call.request.header("Authorization")
             call.respond(mapOf(
-                "message" to "To use GraphQL, send a valid JWT token in Authorization header as 'Bearer <token>'",
+                "message" to "Auth is disabled; Authorization header is optional and ignored by the server",
                 "receivedAuthHeader" to authHeader,
-                "format" to "Authorization: Bearer <JWT_TOKEN>"
+                "format" to "Authorization: Bearer <JWT_TOKEN> (optional)"
             ))
         }
     }

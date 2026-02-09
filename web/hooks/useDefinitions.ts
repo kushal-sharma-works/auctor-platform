@@ -3,11 +3,13 @@ import { graphqlRequest } from "../graphql/client"
 import { GET_DEFINITIONS } from "../graphql/queries"
 import { GetDefinitionResponse } from "../graphql/types"
 
-export function useDefinitions(token: string) {
+export function useDefinitions() {
   return useQuery({
     queryKey: ["definitions"],
     queryFn: () =>
-      graphqlRequest<GetDefinitionResponse>(GET_DEFINITIONS, token),
-    staleTime: 30_000
+      graphqlRequest<GetDefinitionResponse>(GET_DEFINITIONS),
+    staleTime: 30_000,
+    retry: 1,
+    retryDelay: 1000
   })
 }

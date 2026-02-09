@@ -87,7 +87,7 @@ class GraphQLProvider(
                         "id" to it.id,
                         "name" to it.name,
                         "version" to it.version,
-                        "states" to it.states
+                        "states" to it.states.toList()
                     )
                 }
             }
@@ -272,9 +272,9 @@ class GraphQLProvider(
             "currentState" to execution.currentState,
             "status" to formatStatus(execution.status),
             "input" to execution.input.map { (key, value) ->
-                mapOf("key" to key, "value" to value)
-            },
-            "auditEvents" to emptyList<Map<String, Any?>>(), // Will be populated by nested resolver
+                mapOf<String, String>("key" to key, "value" to value)
+            }.toList(),
+            "auditEvents" to emptyList<Map<String, Any?>>(),
             "createdAt" to execution.createdAt.toString(),
             "updatedAt" to execution.updatedAt.toString()
         )
