@@ -1,0 +1,12 @@
+# schema.graphqls
+type Query {
+  getWorkflow(id: ID!, version: Int!): Workflow
+}
+
+type Workflow {
+  id: ID!
+  name: String!
+  description: String
+  version: Int!
+  states: [String!]!
+}
