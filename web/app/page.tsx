@@ -22,7 +22,7 @@ function DefinitionsPageContent({ token }: { token: string }) {
 
   if (isLoading) return <p>Loading…</p>
   if (error) return <p>Error: {error.message}</p>
-  if (!data?.getDefinition) return <p>No definition found</p>
+  if (!data?.getWorkflow) return <p>No workflow found</p>
 
-  return <DefinitionCard def={data.getDefinition} />
+  return <DefinitionCard def={data.getWorkflow} />
 }

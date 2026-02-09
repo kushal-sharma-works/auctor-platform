@@ -3,7 +3,6 @@ package com.auctor.execution
 import com.auctor.execution.cache.CacheService
 import com.auctor.execution.domain.ExecutionEngine
 import com.auctor.execution.grpc.DefinitionGrpcClient
-import com.auctor.execution.http.executionRoutes
 import com.auctor.execution.http.installGraphQlRoutes
 import com.auctor.execution.infra.db.ExposedAuditRepository
 import com.auctor.execution.infra.db.ExposedExecutionRepository
@@ -124,11 +123,13 @@ fun Application.module(
 
     // Configure routes
     routing {
-        // Execution REST routes
-        executionRoutes(actualExecutionEngine)
-
-        // GraphQL endpoints (existing)
-        installGraphQlRoutes(actualCacheService)
+        // GraphQL endpoints (includes health/ready)
+        installGraphQlRoutes(
+            cacheService = actualCacheService,
+            executionEngine = actualExecutionEngine,
+            executionRepository = executionRepository,
+            auditRepository = auditRepository
+        )
     }
 
     // Shutdown hook to clean resources - only if we created them

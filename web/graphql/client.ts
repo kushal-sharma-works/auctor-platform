@@ -1,6 +1,7 @@
 export async function graphqlRequest<T>(
   query: string,
-  token?: string
+  token?: string,
+  variables?: Record<string, any>
 ): Promise<T> {
   try {
     const headers: Record<string, string> = {
@@ -13,10 +14,15 @@ export async function graphqlRequest<T>(
       headers["Authorization"] = authToken
     }
     
+    const body: Record<string, any> = { query }
+    if (variables) {
+      body.variables = variables
+    }
+    
     const res = await fetch(process.env.NEXT_PUBLIC_GRAPHQL_URL!, {
       method: "POST",
       headers,
-      body: JSON.stringify({ query })
+      body: JSON.stringify(body)
     })
 
     if (!res.ok) {
