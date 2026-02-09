@@ -1,24 +1,51 @@
 export async function POST(request: Request): Promise<Response> {
-  const body = await request.text()
+  let body: string
+  try {
+    body = await request.text()
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: "Invalid request body" }),
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    )
+  }
 
-  const upstreamResponse = await fetch("http://localhost:8081/graphql", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body,
-  })
+  try {
+    const upstreamResponse = await fetch("http://localhost:8081/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body,
+    })
 
-  const responseBody = await upstreamResponse.text()
-  const contentType = upstreamResponse.headers.get("content-type") || "application/json"
+    const responseBody = await upstreamResponse.text()
+    const contentType = upstreamResponse.headers.get("content-type") || "application/json"
 
-  return new Response(responseBody, {
-    status: upstreamResponse.status,
-    headers: {
-      "Content-Type": contentType,
-      "Access-Control-Allow-Origin": "*",
-    },
-  })
+    return new Response(responseBody, {
+      status: upstreamResponse.status,
+      headers: {
+        "Content-Type": contentType,
+        "Access-Control-Allow-Origin": "*",
+      },
+    })
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: "Definition service unavailable" }),
+      {
+        status: 502,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    )
+  }
 }
 
 export function OPTIONS(): Response {

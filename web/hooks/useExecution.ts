@@ -22,7 +22,7 @@ export function useExecutions(page: number, size: number) {
   return useQuery({
     queryKey: ['executions', page, size],
     queryFn: () => listExecutions(size, page * size, token || undefined),
-    enabled: !!token,
+    enabled: true,
   })
 }
 
@@ -35,7 +35,7 @@ export function useExecution(executionId: string) {
   return useQuery({
     queryKey: ['execution', executionId],
     queryFn: () => getExecution(executionId, token || undefined),
-    enabled: !!token && !!executionId,
+    enabled: !!executionId,
     refetchInterval: 2000, // Refetch every 2 seconds to get latest status
   })
 }
@@ -49,7 +49,7 @@ export function useExecutionAuditTrail(executionId: string) {
   return useQuery({
     queryKey: ['executionAuditTrail', executionId],
     queryFn: () => getAuditTrail(executionId, token || undefined),
-    enabled: !!token && !!executionId,
+    enabled: !!executionId,
   })
 }
 

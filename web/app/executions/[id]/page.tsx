@@ -78,7 +78,8 @@ export default function ExecutionDetailPage() {
     }
   }
 
-  const isRunning = execution?.status.state?.toLowerCase() === "running"
+  const isRunning = execution?.status.type?.toLowerCase() === "running"
+  const inputItems = Array.isArray(execution?.input) ? execution.input : []
 
   if (isLoading) {
     return (
@@ -183,7 +184,7 @@ export default function ExecutionDetailPage() {
                   <Text fontSize="sm" fontWeight="medium" color="slate.600">
                     Status:
                   </Text>
-                  <Badge status={execution.status.state} />
+                  <Badge status={execution.status.type} />
                 </Flex>
 
                 {execution.status.reason && (
@@ -253,15 +254,15 @@ export default function ExecutionDetailPage() {
                 Input Parameters
               </Heading>
 
-              {Object.keys(execution.input).length === 0 ? (
+              {inputItems.length === 0 ? (
                 <Text fontSize="sm" color="slate.500">
                   No input parameters
                 </Text>
               ) : (
                 <VStack align="stretch" spacing={2}>
-                  {Object.entries(execution.input).map(([key, value]) => (
+                  {inputItems.map((item) => (
                     <Box
-                      key={key}
+                      key={item.key}
                       p={3}
                       bg="slate.50"
                       borderRadius="md"
@@ -269,10 +270,10 @@ export default function ExecutionDetailPage() {
                       borderLeftColor="blue.200"
                     >
                       <Text fontSize="xs" fontWeight="bold" color="slate.700" mb={1}>
-                        {key}
+                        {item.key}
                       </Text>
                       <Text fontSize="xs" color="slate.600" fontFamily="monospace">
-                        {value}
+                        {item.value}
                       </Text>
                     </Box>
                   ))}

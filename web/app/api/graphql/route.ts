@@ -1,5 +1,18 @@
 export async function POST(request: Request): Promise<Response> {
-  const body = await request.text()
+  let body: string
+  try {
+    body = await request.text()
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: "Invalid request body" }),
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    )
+  }
 
   const upstreamResponse = await fetch("http://localhost:8082/graphql", {
     method: "POST",

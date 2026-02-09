@@ -25,7 +25,7 @@ export interface Execution {
 }
 
 export interface ExecutionStatus {
-  state: string
+  type: string
   reason?: string
 }
 

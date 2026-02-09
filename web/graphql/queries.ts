@@ -23,7 +23,7 @@ export const LIST_EXECUTIONS = `
         workflowVersion
         currentState
         status {
-          state
+          type
           reason
         }
         input {
@@ -45,7 +45,7 @@ export const GET_EXECUTION = `
       workflowVersion
       currentState
       status {
-        state
+        type
         reason
       }
       input {
@@ -87,7 +87,7 @@ export const START_EXECUTION = `
       workflowVersion
       currentState
       status {
-        state
+        type
         reason
       }
       input {
@@ -108,7 +108,7 @@ export const ADVANCE_EXECUTION = `
       workflowVersion
       currentState
       status {
-        state
+        type
         reason
       }
       input {
