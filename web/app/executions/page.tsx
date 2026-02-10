@@ -5,7 +5,6 @@ import { useState } from "react"
 import {
   Box,
   Button,
-  Container,
   Flex,
   Heading,
   Text,
@@ -26,14 +25,26 @@ import {
 import { Layout } from "../../components/Layout"
 import { Badge } from "../../components/UI"
 import { useExecutions } from "../../hooks/useExecution"
+import { useWorkflows } from "../../hooks/useGraphql"
 import { StartExecutionModal } from "../../components/StartExecutionModal"
+import { useSelector } from "react-redux"
+import type { RootState } from "../../store"
 
 export default function ExecutionsPage() {
   const [page, setPage] = useState(0)
   const [isStartModalOpen, setIsStartModalOpen] = useState(false)
   const size = 10
   const { data, isLoading, error } = useExecutions(page, size)
+  const { data: workflowData } = useWorkflows(0, 200)
   const executions = data?.items
+    const workflowNameById = new Map(
+      (workflowData?.workflows?.content || []).map((workflow) => [workflow.id, workflow.name])
+    )
+
+    const formatWorkflowName = (workflowId: string) =>
+      workflowNameById.get(workflowId) || workflowId
+  const roles = useSelector((state: RootState) => state.session.roles)
+  const canExecute = roles.includes("EXECUTOR") || roles.includes("ADMIN")
 
   const formatDate = (dateString: string) => {
     try {
@@ -43,181 +54,100 @@ export default function ExecutionsPage() {
     }
   }
 
-  const formatTime = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleTimeString()
-    } catch {
-      return dateString
-    }
-  }
-
   return (
     <Layout>
       <VStack align="stretch" spacing={8}>
         {/* Header */}
-        <Flex
-          direction={{ base: "column", sm: "row" }}
-          align={{ base: "start", sm: "center" }}
-          justify="space-between"
-          gap={6}
-        >
+        <Flex direction={{ base: "column", sm: "row" }} align={{ base: "start", sm: "center" }} justify="space-between" gap={6}>
           <VStack align="start" spacing={2}>
-            <Heading as="h1" size="xl" color="slate.900">
+            <Heading as="h1" size="2xl" color="purple.900" fontWeight="extrabold" letterSpacing="tight">
               Executions
             </Heading>
-            <Text color="slate.600" fontSize="sm">
+            <Text fontSize="lg" fontWeight="medium" color="purple.700">
               Monitor and manage workflow executions in real-time.
             </Text>
           </VStack>
-          <Button
-            colorScheme="blue"
-            px={6}
-            py={2}
-            onClick={() => setIsStartModalOpen(true)}
-          >
-            Start Execution
-          </Button>
+          {canExecute && (
+            <Button colorScheme="purple" px={6} py={3} fontSize="lg" fontWeight="semibold" onClick={() => setIsStartModalOpen(true)} boxShadow="lg">
+              Start Execution
+            </Button>
+          )}
         </Flex>
-
         {/* Table */}
         <Box
-          borderRadius="xl"
-          borderWidth={1}
-          borderColor="slate.200"
+          borderRadius="3xl"
+          borderWidth={2}
+          borderColor="purple.200"
           bg="white"
-          boxShadow="sm"
           overflow="hidden"
+          boxShadow="lg"
         >
           <TableContainer>
             <Table variant="striped">
-              <Thead bg="slate.50">
+              <Thead bg="purple.50">
                 <Tr>
-                  <Th
-                    px={6}
-                    py={3}
-                    textAlign="left"
-                    fontSize="xs"
-                    fontWeight="bold"
-                    textTransform="uppercase"
-                    letterSpacing="0.05em"
-                    color="slate.500"
-                  >
+                  <Th px={8} py={4} textAlign="left" fontSize="sm" fontWeight="bold" textTransform="uppercase" letterSpacing="0.05em" color="purple.700">
                     Execution ID
                   </Th>
-                  <Th
-                    px={6}
-                    py={3}
-                    textAlign="left"
-                    fontSize="xs"
-                    fontWeight="bold"
-                    textTransform="uppercase"
-                    letterSpacing="0.05em"
-                    color="slate.500"
-                  >
+                  <Th px={8} py={4} textAlign="left" fontSize="sm" fontWeight="bold" textTransform="uppercase" letterSpacing="0.05em" color="purple.700">
                     Workflow
                   </Th>
-                  <Th
-                    px={6}
-                    py={3}
-                    textAlign="left"
-                    fontSize="xs"
-                    fontWeight="bold"
-                    textTransform="uppercase"
-                    letterSpacing="0.05em"
-                    color="slate.500"
-                  >
+                  <Th px={8} py={4} textAlign="left" fontSize="sm" fontWeight="bold" textTransform="uppercase" letterSpacing="0.05em" color="purple.700">
                     Current State
                   </Th>
-                  <Th
-                    px={6}
-                    py={3}
-                    textAlign="left"
-                    fontSize="xs"
-                    fontWeight="bold"
-                    textTransform="uppercase"
-                    letterSpacing="0.05em"
-                    color="slate.500"
-                  >
+                  <Th px={8} py={4} textAlign="left" fontSize="sm" fontWeight="bold" textTransform="uppercase" letterSpacing="0.05em" color="purple.700">
                     Status
                   </Th>
-                  <Th
-                    px={6}
-                    py={3}
-                    textAlign="left"
-                    fontSize="xs"
-                    fontWeight="bold"
-                    textTransform="uppercase"
-                    letterSpacing="0.05em"
-                    color="slate.500"
-                  >
+                  <Th px={8} py={4} textAlign="left" fontSize="sm" fontWeight="bold" textTransform="uppercase" letterSpacing="0.05em" color="purple.700">
                     Started
                   </Th>
-                  <Th px={6} py={3}></Th>
+                  <Th px={8} py={4}></Th>
                 </Tr>
               </Thead>
               <Tbody>
                 {isLoading && (
                   <Tr>
-                    <Td colSpan={6} px={6} py={6}>
+                    <Td colSpan={6} px={8} py={8}>
                       <Center>
-                        <Spinner color="blue.500" />
+                        <Spinner color="purple.500" size="lg" />
                       </Center>
                     </Td>
                   </Tr>
                 )}
                 {error && (
                   <Tr>
-                    <Td
-                      colSpan={6}
-                      px={6}
-                      py={6}
-                      textAlign="center"
-                      color="red.600"
-                      fontSize="sm"
-                    >
+                    <Td colSpan={6} px={8} py={8} textAlign="center" color="red.600" fontSize="lg">
                       Unable to load executions.
                     </Td>
                   </Tr>
                 )}
                 {!isLoading && !error && executions?.length === 0 && (
                   <Tr>
-                    <Td
-                      colSpan={6}
-                      px={6}
-                      py={6}
-                      textAlign="center"
-                      color="slate.500"
-                      fontSize="sm"
-                    >
+                    <Td colSpan={6} px={8} py={8} textAlign="center" color="purple.700" fontSize="lg">
                       No executions found. Start a new execution to get started.
                     </Td>
                   </Tr>
                 )}
                 {executions?.map((execution) => (
-                  <Tr key={execution.id} _hover={{ bg: "slate.50" }}>
-                    <Td px={6} py={4} fontSize="sm" fontWeight="medium" color="slate.900">
+                  <Tr key={execution.id} _hover={{ bg: "purple.50", transition: "background-color 0.2s" }}>
+                    <Td px={8} py={6} fontSize="lg" fontWeight="bold" color="purple.900">
                       <code>{execution.id.substring(0, 8)}...</code>
                     </Td>
-                    <Td px={6} py={4} fontSize="sm" color="slate.600">
-                      {execution.workflowId}
+                    <Td px={8} py={6} fontSize="lg" color="purple.700">
+                      {formatWorkflowName(execution.workflowId)}
                     </Td>
-                    <Td px={6} py={4} fontSize="sm" color="slate.600">
+                    <Td px={8} py={6} fontSize="lg" color="purple.700">
                       <code>{execution.currentState}</code>
                     </Td>
-                    <Td px={6} py={4} fontSize="sm" color="slate.600">
-                      <Badge status={execution.status.state} />
+                    <Td px={8} py={6} fontSize="lg" color="purple.700">
+                      <Badge status={execution.status.type} />
                     </Td>
-                    <Td px={6} py={4} fontSize="sm" color="slate.600">
+                    <Td px={8} py={6} fontSize="lg" color="purple.700">
                       {formatDate(execution.createdAt)}
                     </Td>
-                    <Td px={6} py={4} textAlign="right" fontSize="sm">
+                    <Td px={8} py={6} textAlign="right" fontSize="lg">
                       <Link href={`/executions/${execution.id}`}>
-                        <Text
-                          as="span"
-                          fontWeight="medium"
-                          color="blue.600"
-                          _hover={{ color: "blue.700" }}
-                        >
+                        <Text as="span" fontWeight="semibold" color="purple.600" _hover={{ color: "purple.700", textDecoration: "underline" }}>
                           View
                         </Text>
                       </Link>
@@ -231,27 +161,39 @@ export default function ExecutionsPage() {
 
         {/* Pagination */}
         <Flex justify="space-between" align="center" gap={6}>
-          <Text fontSize="sm" color="slate.500">
+          <Text fontSize="lg" fontWeight="medium" color="purple.700">
             Page {page + 1}
           </Text>
-          <HStack gap={2}>
+          <HStack gap={4}>
             <Button
-              size="sm"
+              size="md"
               variant="outline"
-              borderColor="slate.200"
-              color="slate.600"
+              borderWidth={2}
+              borderColor="purple.200"
+              color="purple.700"
+              bg="purple.50"
+              fontSize="lg"
+              fontWeight="semibold"
               onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
               isDisabled={page === 0}
+              _hover={{ bg: "purple.100" }}
+              boxShadow="sm"
             >
               Previous
             </Button>
             <Button
-              size="sm"
+              size="md"
               variant="outline"
-              borderColor="slate.200"
-              color="slate.600"
+              borderWidth={2}
+              borderColor="purple.200"
+              color="purple.700"
+              bg="purple.50"
+              fontSize="lg"
+              fontWeight="semibold"
               onClick={() => setPage((prev) => prev + 1)}
               isDisabled={!executions || executions.length < size}
+              _hover={{ bg: "purple.100" }}
+              boxShadow="sm"
             >
               Next
             </Button>
@@ -260,10 +202,9 @@ export default function ExecutionsPage() {
       </VStack>
 
       {/* Start Execution Modal */}
-      <StartExecutionModal
-        isOpen={isStartModalOpen}
-        onClose={() => setIsStartModalOpen(false)}
-      />
+      {canExecute && (
+        <StartExecutionModal isOpen={isStartModalOpen} onClose={() => setIsStartModalOpen(false)} />
+      )}
     </Layout>
   )
 }

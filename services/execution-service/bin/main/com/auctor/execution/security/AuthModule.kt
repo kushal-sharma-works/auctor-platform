@@ -16,12 +16,37 @@ fun Application.configureAuth() {
             verifier(verifier)
             
             validate { credential ->
+                JWTPrincipal(credential.payload)
+            }
+        }
+
+        jwt("auth-viewer") {
+            val verifier = JwtConfig.buildVerifier(config, isDev)
+            verifier(verifier)
+
+            validate { credential ->
                 val roles = credential.payload
                     .getClaim("roles")
                     .asList(String::class.java)
                     ?: emptyList()
-                
-                if (roles.contains("EXECUTOR")) {
+                if (roles.contains("ADMIN") || roles.contains("VIEWER")) {
+                    JWTPrincipal(credential.payload)
+                } else {
+                    null
+                }
+            }
+        }
+
+        jwt("auth-executor") {
+            val verifier = JwtConfig.buildVerifier(config, isDev)
+            verifier(verifier)
+
+            validate { credential ->
+                val roles = credential.payload
+                    .getClaim("roles")
+                    .asList(String::class.java)
+                    ?: emptyList()
+                if (roles.contains("ADMIN") || roles.contains("EXECUTOR")) {
                     JWTPrincipal(credential.payload)
                 } else {
                     null

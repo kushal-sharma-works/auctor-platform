@@ -3,11 +3,11 @@ package com.auctor.execution
 import com.auctor.execution.cache.CacheService
 import com.auctor.execution.domain.ExecutionEngine
 import com.auctor.execution.grpc.DefinitionGrpcClient
-import com.auctor.execution.http.executionRoutes
 import com.auctor.execution.http.installGraphQlRoutes
 import com.auctor.execution.infra.db.ExposedAuditRepository
 import com.auctor.execution.infra.db.ExposedExecutionRepository
 import com.auctor.execution.observability.initTracing
+import com.auctor.execution.security.AuthContextPlugin
 import com.auctor.execution.security.configureAuth
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -27,10 +27,9 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("Application")
 
-fun main() {
-    embeddedServer(Netty, port = 8082) {
-        module()
-    }.start(wait = true)
+fun main(args: Array<String>) {
+    // Delegate to Ktor EngineMain to load application.conf without extra config dependencies.
+    EngineMain.main(args)
 }
 
 fun Application.module(
@@ -59,7 +58,7 @@ fun Application.module(
             ignoreUnknownKeys = true
         })
     }
-    
+
     // Status pages for error handling
     install(StatusPages) {
         exception<Throwable> { call, cause ->
@@ -73,6 +72,10 @@ fun Application.module(
             )
         }
     }
+
+    // Authentication and auth context extraction
+    configureAuth()
+    install(AuthContextPlugin)
 
     // Create gRPC client (shared) - use provided one for testing or create default
     val actualGrpcClient = grpcClient ?: DefinitionGrpcClient(
@@ -119,16 +122,15 @@ fun Application.module(
     // Initialize OpenTelemetry tracing
     val openTelemetry = initTracing()
 
-    // Configure authentication
-    configureAuth()
-
     // Configure routes
     routing {
-        // Execution REST routes
-        executionRoutes(actualExecutionEngine)
-
-        // GraphQL endpoints (existing)
-        installGraphQlRoutes(actualCacheService)
+        // GraphQL endpoints (includes health/ready)
+        installGraphQlRoutes(
+            cacheService = actualCacheService,
+            executionEngine = actualExecutionEngine,
+            executionRepository = executionRepository,
+            auditRepository = auditRepository
+        )
     }
 
     // Shutdown hook to clean resources - only if we created them

@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { Box, Container, VStack, Heading, Text } from "@chakra-ui/react"
+import { Box, VStack, Heading, Text } from "@chakra-ui/react"
 import { Layout } from "../components/Layout"
 import { DashboardClient } from "../components/DashboardClient"
 
@@ -30,7 +30,8 @@ export default function DashboardPage() {
             Workflow & Policy Command Center
           </Heading>
           <Text fontSize="md" color="blue.800" maxW="2xl">
-            Monitor the latest definitions and keep tabs on execution readiness across teams. Beautiful, fast, and actionable.
+            Monitor the latest definitions and keep tabs on execution readiness across teams. 
+            Beautiful, fast, and actionable.
           </Text>
         </Box>
 

@@ -1,22 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from "next/server"
+
+const PUBLIC_PATHS = ["/login", "/api/auth"]
+
+const isPublicPath = (pathname: string) =>
+  PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`)) ||
+  pathname.startsWith("/_next") ||
+  pathname.startsWith("/favicon.ico")
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')?.value || 
-                request.headers.get('authorization')
+  if (request.method !== "GET") {
+    return NextResponse.next()
+  }
+  const { pathname } = request.nextUrl
+  if (isPublicPath(pathname)) {
+    return NextResponse.next()
+  }
 
-  // Public paths that don't require authentication
-  const publicPaths = ['/login', '/api']
-  const isPublicPath = publicPaths.some(path => 
-    request.nextUrl.pathname.startsWith(path)
-  )
-
-  if (!isPublicPath && !token) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  const token = request.cookies.get("auctor.auth.token")?.value || request.headers.get("authorization")
+  if (!token) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = "/login"
+    loginUrl.searchParams.set("redirect", pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ["/((?!api|_next|favicon.ico).*)"],
 }

@@ -1,3 +1,5 @@
+// ========== Definition Service Queries ==========
+
 export const GET_WORKFLOW = `
   query GetWorkflow($id: ID!) {
     workflow(id: $id) {
@@ -135,6 +137,89 @@ export const PUBLISH_POLICY = `
       name
       version
       status
+    }
+  }
+`
+
+// ========== Execution Service Queries ==========
+
+export const LIST_EXECUTIONS = `
+  query ListExecutions($limit: Int, $offset: Int) {
+    listExecutions(limit: $limit, offset: $offset) {
+      limit
+      offset
+      total
+      items {
+        id
+        workflowId
+        workflowVersion
+        currentState
+        status {
+          type
+          reason
+        }
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`
+
+export const GET_EXECUTION = `
+  query GetExecution($id: ID!) {
+    getExecution(id: $id) {
+      id
+      workflowId
+      workflowVersion
+      currentState
+      status {
+        type
+        reason
+      }
+      input {
+        key
+        value
+      }
+      auditEvents {
+        id
+        executionId
+        eventType
+        actor
+        details
+        timestamp
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`
+
+export const START_EXECUTION = `
+  mutation StartExecution($input: StartExecutionInput!) {
+    startExecution(input: $input) {
+      id
+      workflowId
+      workflowVersion
+      currentState
+      status {
+        type
+        reason
+      }
+      createdAt
+    }
+  }
+`
+
+export const ADVANCE_EXECUTION = `
+  mutation AdvanceExecution($executionId: ID!, $input: AdvanceExecutionInput) {
+    advanceExecution(executionId: $executionId, input: $input) {
+      id
+      currentState
+      status {
+        type
+        reason
+      }
+      updatedAt
     }
   }
 `

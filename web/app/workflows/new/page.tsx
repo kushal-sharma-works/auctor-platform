@@ -23,6 +23,8 @@ import {
 import { Select } from "@chakra-ui/react/select"
 import { Layout } from "../../../components/Layout"
 import { useCreateWorkflow } from "../../../hooks/useGraphql"
+import { useSelector } from "react-redux"
+import type { RootState } from "../../../store"
 
 const transitionSchema = z.object({
   fromState: z.string().min(1, "From state is required"),
@@ -42,6 +44,8 @@ type WorkflowFormData = z.infer<typeof workflowSchema>
 export default function NewWorkflowPage() {
   const router = useRouter()
   const createWorkflow = useCreateWorkflow()
+  const roles = useSelector((state: RootState) => state.session.roles)
+  const canAdmin = roles.includes("ADMIN")
   const {
     register,
     control,
@@ -71,6 +75,7 @@ export default function NewWorkflowPage() {
   })
 
   const onSubmit = async (data: WorkflowFormData) => {
+    if (!canAdmin) return
     try {
       const states = data.states.split(",").map((s) => s.trim())
       const payload = {
@@ -103,6 +108,13 @@ export default function NewWorkflowPage() {
           </Text>
         </VStack>
 
+        {!canAdmin && (
+          <Alert status="warning" borderRadius="md">
+            <AlertIcon />
+            You need ADMIN access to create workflows.
+          </Alert>
+        )}
+
         <Box
           as="form"
           onSubmit={handleSubmit(onSubmit)}
@@ -113,6 +125,8 @@ export default function NewWorkflowPage() {
           p={6}
           boxShadow="sm"
           maxW="4xl"
+          opacity={canAdmin ? 1 : 0.5}
+          pointerEvents={canAdmin ? "auto" : "none"}
         >
           <VStack spacing={6}>
             {/* Workflow Name */}
@@ -213,6 +227,9 @@ export default function NewWorkflowPage() {
                   Enter states first to add transitions
                 </Alert>
               ) : (
+                <Text fontSize="xs" color="gray.500" mb={2}>
+                  Use the policy ID (not the name) when linking a policy.
+                </Text>
                 <VStack spacing={3} align="stretch">
                   {fields.map((field, index) => (
                     <HStack key={field.id} gap={2} align="flex-start">
@@ -250,7 +267,7 @@ export default function NewWorkflowPage() {
                         ))}
                       </Select>
                       <Input
-                        placeholder="Policy (optional)"
+                        placeholder="Policy ID (optional)"
                         {...register(`transitions.${index}.policyRef`)}
                         borderColor="gray.300"
                         _focus={{
@@ -274,6 +291,10 @@ export default function NewWorkflowPage() {
                 </VStack>
               )}
             </FormControl>
+
+            <Text fontSize="sm" color="gray.500">
+              Use the policy ID from the policy detail page (not the name).
+            </Text>
 
             {/* Form Actions */}
             <HStack justify="flex-end" gap={3} w="full" pt={4}>

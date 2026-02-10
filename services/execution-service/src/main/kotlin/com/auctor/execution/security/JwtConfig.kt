@@ -7,8 +7,6 @@ import io.ktor.server.config.*
 
 object JwtConfig {
 
-    private const val defaultSecret = "dev-secret-change-later"
-
     data class Settings(
         val issuer: String,
         val audience: String,
@@ -17,7 +15,7 @@ object JwtConfig {
 
     fun buildVerifier(config: ApplicationConfig, developmentMode: Boolean): JWTVerifier {
         val settings = loadSettings(config)
-        if (!developmentMode && settings.secret == defaultSecret) {
+        if (!developmentMode && settings.secret.isBlank()) {
             throw IllegalStateException("JWT secret must be configured for non-dev environments")
         }
 
@@ -37,7 +35,7 @@ object JwtConfig {
             ?: "execution-service"
         val secret = System.getenv("EXECUTION_JWT_SECRET")
             ?: config.propertyOrNull("ktor.jwt.secret")?.getString()
-            ?: defaultSecret
+            ?: ""
 
         return Settings(issuer = issuer, audience = audience, secret = secret)
     }

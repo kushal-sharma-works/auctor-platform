@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { useState } from "react"
+import { useSelector } from "react-redux"
 import {
   Box,
   Button,
@@ -34,6 +35,7 @@ import {
 import { Layout } from "../../../components/Layout"
 import { Badge } from "../../../components/UI"
 import { useWorkflow, usePublishWorkflow } from "../../../hooks/useGraphql"
+import type { RootState } from "../../../store"
 
 export default function WorkflowDetailPage() {
   const params = useParams()
@@ -41,6 +43,8 @@ export default function WorkflowDetailPage() {
   const { data, isLoading, error, refetch } = useWorkflow(workflowId ?? "")
   const publishMutation = usePublishWorkflow()
   const [publishError, setPublishError] = useState<string | null>(null)
+  const roles = useSelector((state: RootState) => state.session.roles)
+  const canAdmin = roles.includes("ADMIN")
 
   const workflow = data?.workflow
 
@@ -76,7 +80,7 @@ export default function WorkflowDetailPage() {
               Back
             </Button>
           </Link>
-          {workflow && (
+          {workflow && canAdmin && (
             <Box
               title={workflow.status !== "DRAFT" ? `Workflow is ${workflow.status} - only DRAFT workflows can be published` : ""}
             >
@@ -99,23 +103,6 @@ export default function WorkflowDetailPage() {
         <Text mt={8} fontSize="sm" color="slate.500">
           Loading workflow…
         </Text>
-      )}
-      {error && (
-        <Alert status="error" borderRadius="md" mb={6}>
-          <AlertIcon />
-          <Box>
-            <AlertTitle>Unable to load workflow</AlertTitle>
-          </Box>
-        </Alert>
-      )}
-      {publishError && (
-        <Alert status="error" borderRadius="md" mb={6}>
-          <AlertIcon />
-          <Box>
-            <AlertTitle>Publish Failed</AlertTitle>
-            <AlertDescription>{publishError}</AlertDescription>
-          </Box>
-        </Alert>
       )}
 
       {workflow && (

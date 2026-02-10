@@ -1,39 +1,38 @@
-export function getStoredToken(): string | null {
-  if (typeof window === "undefined") {
-    return null
-  }
+const TOKEN_KEY = "auctor.auth.token"
 
-  const fromStorage = window.localStorage.getItem("token")
-  if (fromStorage) {
-    return fromStorage
-  }
+const isBrowser = () => typeof window !== "undefined"
 
-  const cookie = document.cookie
-    .split(";")
-    .map((value) => value.trim())
-    .find((value) => value.startsWith("token="))
-
-  if (!cookie) {
-    return null
-  }
-
-  return decodeURIComponent(cookie.split("=")[1])
+export const getStoredToken = (): string | null => {
+  if (!isBrowser()) return null
+  return window.localStorage.getItem(TOKEN_KEY)
 }
 
-export function setStoredToken(token: string) {
-  if (typeof window === "undefined") {
-    return
-  }
-
-  window.localStorage.setItem("token", token)
-  document.cookie = `token=${encodeURIComponent(token)}; path=/`
+export const setStoredToken = (token: string) => {
+  if (!isBrowser()) return
+  window.localStorage.setItem(TOKEN_KEY, token)
+  const encoded = encodeURIComponent(token)
+  document.cookie = `${TOKEN_KEY}=${encoded}; Path=/; SameSite=Lax; Max-Age=3600`
 }
 
-export function clearStoredToken() {
-  if (typeof window === "undefined") {
-    return
-  }
+export const clearStoredToken = () => {
+  if (!isBrowser()) return
+  window.localStorage.removeItem(TOKEN_KEY)
+  document.cookie = `${TOKEN_KEY}=; Path=/; Max-Age=0; SameSite=Lax`
+}
 
-  window.localStorage.removeItem("token")
-  document.cookie = "token=; Max-Age=0; path=/"
+export const getCookieToken = (cookieHeader?: string): string | null => {
+  const source = cookieHeader ?? (isBrowser() ? document.cookie : "")
+  if (!source) return null
+  const prefix = `${TOKEN_KEY}=`
+  const parts = source.split(";").map((part) => part.trim())
+  const match = parts.find((part) => part.startsWith(prefix))
+  if (!match) return null
+  return decodeURIComponent(match.substring(prefix.length))
+}
+
+export const getStoredTokenPayload = () => {
+  if (!isBrowser()) return null
+  const token = window.localStorage.getItem(TOKEN_KEY)
+  if (!token) return null
+  return token
 }

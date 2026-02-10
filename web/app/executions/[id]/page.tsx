@@ -27,6 +27,8 @@ import {
 import { Layout } from "../../../components/Layout"
 import { Badge } from "../../../components/UI"
 import { useExecution, useExecutionAuditTrail, useAdvanceExecution } from "../../../hooks/useExecution"
+import { useSelector } from "react-redux"
+import type { RootState } from "../../../store"
 
 export default function ExecutionDetailPage() {
   const params = useParams()
@@ -37,6 +39,8 @@ export default function ExecutionDetailPage() {
   const { data: execution, isLoading, error } = useExecution(executionId)
   const { data: auditTrail, isLoading: auditLoading } = useExecutionAuditTrail(executionId)
   const advanceExecutionMutation = useAdvanceExecution()
+  const roles = useSelector((state: RootState) => state.session.roles)
+  const canExecute = roles.includes("EXECUTOR") || roles.includes("ADMIN")
 
   const handleAdvance = async () => {
     try {
@@ -78,7 +82,8 @@ export default function ExecutionDetailPage() {
     }
   }
 
-  const isRunning = execution?.status.state?.toLowerCase() === "running"
+  const isRunning = execution?.status.type?.toLowerCase() === "running"
+  const inputItems = Array.isArray(execution?.input) ? execution.input : []
 
   if (isLoading) {
     return (
@@ -183,7 +188,7 @@ export default function ExecutionDetailPage() {
                   <Text fontSize="sm" fontWeight="medium" color="slate.600">
                     Status:
                   </Text>
-                  <Badge status={execution.status.state} />
+                  <Badge status={execution.status.type} />
                 </Flex>
 
                 {execution.status.reason && (
@@ -226,7 +231,7 @@ export default function ExecutionDetailPage() {
                 </Flex>
               </VStack>
 
-              {isRunning && (
+              {isRunning && canExecute && (
                 <Button
                   colorScheme="blue"
                   onClick={handleAdvance}
@@ -253,15 +258,15 @@ export default function ExecutionDetailPage() {
                 Input Parameters
               </Heading>
 
-              {Object.keys(execution.input).length === 0 ? (
+              {inputItems.length === 0 ? (
                 <Text fontSize="sm" color="slate.500">
                   No input parameters
                 </Text>
               ) : (
                 <VStack align="stretch" spacing={2}>
-                  {Object.entries(execution.input).map(([key, value]) => (
+                  {inputItems.map((item) => (
                     <Box
-                      key={key}
+                      key={item.key}
                       p={3}
                       bg="slate.50"
                       borderRadius="md"
@@ -269,10 +274,10 @@ export default function ExecutionDetailPage() {
                       borderLeftColor="blue.200"
                     >
                       <Text fontSize="xs" fontWeight="bold" color="slate.700" mb={1}>
-                        {key}
+                        {item.key}
                       </Text>
                       <Text fontSize="xs" color="slate.600" fontFamily="monospace">
-                        {value}
+                        {item.value}
                       </Text>
                     </Box>
                   ))}

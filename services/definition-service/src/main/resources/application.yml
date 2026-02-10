@@ -23,14 +23,6 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-  
-  graphql:
-    graphiql:
-      enabled: true
-    path: /graphql
-    schema:
-      printer:
-        enabled: true
 
 server:
   port: 8081
@@ -48,6 +40,13 @@ logging:
     net.devh.boot.grpc: DEBUG
     io.grpc: DEBUG
     root: INFO
+
+security:
+  jwt:
+    secret: ${DEFINITION_JWT_SECRET:dev-secret-change-later-dev-secret-change-later}
+    issuer: ${DEFINITION_JWT_ISSUER:auctor-auth}
+    audience: ${DEFINITION_JWT_AUDIENCE:definition-service}
+    jwks-uri: ${DEFINITION_JWT_JWKS_URI:}
 
 
 management:

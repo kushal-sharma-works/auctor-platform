@@ -3,7 +3,7 @@
     "name": "14-list-policies-page-1",
     "method": "GET",
     "url": "http://localhost:8081/api/v1/policies?page=1&size=5",
-    "timestamp": "Sun Feb  8 10:05:23 UTC 2026",
+    "timestamp": "Sat Feb  7 19:50:41 UTC 2026",
     "body": null
   },
   "response": {
@@ -23,7 +23,7 @@
         "unpaged": false
       },
       "totalPages": 1,
-      "totalElements": 5,
+      "totalElements": 3,
       "last": true,
       "size": 5,
       "number": 1,

@@ -173,6 +173,9 @@ export function StartExecutionModal({ isOpen, onClose }: StartExecutionModalProp
               <FormLabel fontSize="sm" fontWeight="medium" color="slate.700">
                 Input Parameters
               </FormLabel>
+              <Text fontSize="xs" color="slate.500">
+                Keys must match policy fields (case-sensitive). Example: Delivery=5, Item=New.
+              </Text>
               <VStack align="stretch" spacing={2}>
                 {/* Input Key-Value Adder */}
                 <HStack spacing={2}>

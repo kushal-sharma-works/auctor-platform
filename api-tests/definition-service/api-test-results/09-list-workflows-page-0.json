@@ -3,7 +3,7 @@
     "name": "09-list-workflows-page-0",
     "method": "GET",
     "url": "http://localhost:8081/api/v1/workflows?page=0&size=10",
-    "timestamp": "Sun Feb  8 10:05:23 UTC 2026",
+    "timestamp": "Sat Feb  7 19:50:40 UTC 2026",
     "body": null
   },
   "response": {
@@ -46,31 +46,10 @@
           "updatedAt": "2026-02-07T19:32:51.579919Z"
         },
         {
-          "id": "0986b4a0-9260-4eba-9cd6-30cda52909c0",
-          "name": "Simple Two-State Workflow",
-          "version": 1,
-          "status": "DRAFT",
-          "states": [
-            "START",
-            "END"
-          ],
-          "initialState": "START",
-          "transitions": [
-            {
-              "fromState": "START",
-              "toState": "END",
-              "policyRef": null,
-              "guardExpression": "completed == true"
-            }
-          ],
-          "createdAt": "2026-02-07T19:50:40.828928Z",
-          "updatedAt": "2026-02-07T19:50:40.828928Z"
-        },
-        {
           "id": "8c9f959c-c8c5-4b38-90ef-e82a2d647893",
           "name": "Order Approval Workflow",
-          "version": 2,
-          "status": "PUBLISHED",
+          "version": 1,
+          "status": "DRAFT",
           "states": [
             "PENDING",
             "REVIEWING",
@@ -106,52 +85,10 @@
             }
           ],
           "createdAt": "2026-02-07T19:50:40.734055Z",
-          "updatedAt": "2026-02-07T19:50:41.051605Z"
+          "updatedAt": "2026-02-07T19:50:40.734055Z"
         },
         {
-          "id": "21e30f1e-0a3b-44eb-bc62-e3821000bdb8",
-          "name": "Order Approval Workflow",
-          "version": 1,
-          "status": "DRAFT",
-          "states": [
-            "PENDING",
-            "REVIEWING",
-            "APPROVED",
-            "REJECTED",
-            "COMPLETED"
-          ],
-          "initialState": "PENDING",
-          "transitions": [
-            {
-              "fromState": "PENDING",
-              "toState": "REVIEWING",
-              "policyRef": null,
-              "guardExpression": "amount < 10000"
-            },
-            {
-              "fromState": "REVIEWING",
-              "toState": "APPROVED",
-              "policyRef": "5796d2d9-5193-40cc-b20f-3d9cc72c1991",
-              "guardExpression": "approverCount >= 1"
-            },
-            {
-              "fromState": "REVIEWING",
-              "toState": "REJECTED",
-              "policyRef": null,
-              "guardExpression": "!approved"
-            },
-            {
-              "fromState": "APPROVED",
-              "toState": "COMPLETED",
-              "policyRef": "2f110042-7b17-458e-81e7-c664e52b6bbc",
-              "guardExpression": null
-            }
-          ],
-          "createdAt": "2026-02-08T10:05:22.903038Z",
-          "updatedAt": "2026-02-08T10:05:22.903038Z"
-        },
-        {
-          "id": "4938bd1d-b8d2-44ba-8574-c77186801400",
+          "id": "0986b4a0-9260-4eba-9cd6-30cda52909c0",
           "name": "Simple Two-State Workflow",
           "version": 1,
           "status": "DRAFT",
@@ -168,8 +105,8 @@
               "guardExpression": "completed == true"
             }
           ],
-          "createdAt": "2026-02-08T10:05:23.021485Z",
-          "updatedAt": "2026-02-08T10:05:23.021485Z"
+          "createdAt": "2026-02-07T19:50:40.828928Z",
+          "updatedAt": "2026-02-07T19:50:40.828928Z"
         }
       ],
       "pageable": {
@@ -185,11 +122,11 @@
         "unpaged": false
       },
       "totalPages": 1,
-      "totalElements": 5,
+      "totalElements": 3,
       "last": true,
       "size": 10,
       "number": 0,
-      "numberOfElements": 5,
+      "numberOfElements": 3,
       "sort": {
         "empty": true,
         "sorted": false,

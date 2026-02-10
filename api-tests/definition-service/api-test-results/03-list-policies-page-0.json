@@ -3,7 +3,7 @@
     "name": "03-list-policies-page-0",
     "method": "GET",
     "url": "http://localhost:8081/api/v1/policies?page=0&size=10",
-    "timestamp": "Sun Feb  8 10:05:22 UTC 2026",
+    "timestamp": "Sat Feb  7 19:50:40 UTC 2026",
     "body": null
   },
   "response": {
@@ -30,6 +30,25 @@
           "createdAt": "2026-02-07T19:32:51.579919Z"
         },
         {
+          "id": "9da1c1a0-a13e-4b79-a6cb-f474b132f09c",
+          "name": "High Value Order Policy",
+          "version": 1,
+          "status": "DRAFT",
+          "conditions": [
+            {
+              "field": "amount",
+              "operator": "GT",
+              "value": "1000"
+            },
+            {
+              "field": "customerType",
+              "operator": "EQ",
+              "value": "PREMIUM"
+            }
+          ],
+          "createdAt": "2026-02-07T19:50:39.823297Z"
+        },
+        {
           "id": "4bbb99f8-2f29-4826-8070-7cc9df36e44a",
           "name": "Shipping Eligibility Policy",
           "version": 1,
@@ -52,68 +71,6 @@
             }
           ],
           "createdAt": "2026-02-07T19:50:40.053317Z"
-        },
-        {
-          "id": "9da1c1a0-a13e-4b79-a6cb-f474b132f09c",
-          "name": "High Value Order Policy",
-          "version": 2,
-          "status": "PUBLISHED",
-          "conditions": [
-            {
-              "field": "amount",
-              "operator": "GT",
-              "value": "1000"
-            },
-            {
-              "field": "customerType",
-              "operator": "EQ",
-              "value": "PREMIUM"
-            }
-          ],
-          "createdAt": "2026-02-07T19:50:39.823297Z"
-        },
-        {
-          "id": "5796d2d9-5193-40cc-b20f-3d9cc72c1991",
-          "name": "High Value Order Policy",
-          "version": 1,
-          "status": "DRAFT",
-          "conditions": [
-            {
-              "field": "amount",
-              "operator": "GT",
-              "value": "1000"
-            },
-            {
-              "field": "customerType",
-              "operator": "EQ",
-              "value": "PREMIUM"
-            }
-          ],
-          "createdAt": "2026-02-08T10:05:22.249032Z"
-        },
-        {
-          "id": "2f110042-7b17-458e-81e7-c664e52b6bbc",
-          "name": "Shipping Eligibility Policy",
-          "version": 1,
-          "status": "DRAFT",
-          "conditions": [
-            {
-              "field": "destination",
-              "operator": "IN",
-              "value": "USA,CANADA,MEXICO"
-            },
-            {
-              "field": "weight",
-              "operator": "LT",
-              "value": "50"
-            },
-            {
-              "field": "hazardous",
-              "operator": "EQ",
-              "value": "false"
-            }
-          ],
-          "createdAt": "2026-02-08T10:05:22.384328Z"
         }
       ],
       "pageable": {
@@ -129,11 +86,11 @@
         "unpaged": false
       },
       "totalPages": 1,
-      "totalElements": 5,
+      "totalElements": 3,
       "last": true,
       "size": 10,
       "number": 0,
-      "numberOfElements": 5,
+      "numberOfElements": 3,
       "sort": {
         "empty": true,
         "sorted": false,

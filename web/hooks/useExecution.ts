@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSelector } from 'react-redux'
 import type { RootState } from '../store'
 import {
@@ -20,9 +20,9 @@ export function useExecutions(page: number, size: number) {
   const token = useSelector((state: RootState) => state.session.token)
 
   return useQuery({
-    queryKey: ['executions', page, size],
+    queryKey: ['executions', page, size, token],
     queryFn: () => listExecutions(size, page * size, token || undefined),
-    enabled: !!token,
+    enabled: Boolean(token),
   })
 }
 
@@ -33,10 +33,11 @@ export function useExecution(executionId: string) {
   const token = useSelector((state: RootState) => state.session.token)
 
   return useQuery({
-    queryKey: ['execution', executionId],
+    queryKey: ['execution', executionId, token],
     queryFn: () => getExecution(executionId, token || undefined),
-    enabled: !!token && !!executionId,
-    refetchInterval: 2000, // Refetch every 2 seconds to get latest status
+    enabled: Boolean(executionId) && Boolean(token),
+    refetchInterval: (data) =>
+      data?.status?.type?.toLowerCase() === 'running' ? 2000 : false,
   })
 }
 
@@ -47,9 +48,9 @@ export function useExecutionAuditTrail(executionId: string) {
   const token = useSelector((state: RootState) => state.session.token)
 
   return useQuery({
-    queryKey: ['executionAuditTrail', executionId],
+    queryKey: ['executionAuditTrail', executionId, token],
     queryFn: () => getAuditTrail(executionId, token || undefined),
-    enabled: !!token && !!executionId,
+    enabled: Boolean(executionId) && Boolean(token),
   })
 }
 
@@ -68,10 +69,16 @@ export function useStartExecution() {
  * Hook to advance an execution to the next state
  */
 export function useAdvanceExecution() {
+  const queryClient = useQueryClient()
   const token = useSelector((state: RootState) => state.session.token)
 
   return useMutation({
     mutationFn: ({ executionId, request }: { executionId: string; request?: AdvanceExecutionRequest }) =>
       advanceExecution(executionId, request, token || undefined),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['execution', variables.executionId, token] })
+      queryClient.invalidateQueries({ queryKey: ['executionAuditTrail', variables.executionId, token] })
+      queryClient.invalidateQueries({ queryKey: ['executions'] })
+    },
   })
 }

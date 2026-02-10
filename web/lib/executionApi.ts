@@ -1,9 +1,16 @@
 /**
  * Execution Service API Client
- * REST-based communication with execution service via Next.js proxy
+ * GraphQL-based communication with execution service via Next.js proxy
  */
 
-const EXECUTION_API_BASE = '/api/execution'
+import { graphqlRequest } from '../graphql/client'
+import {
+  LIST_EXECUTIONS,
+  GET_EXECUTION,
+  GET_AUDIT_TRAIL,
+  START_EXECUTION,
+  ADVANCE_EXECUTION,
+} from '../graphql/queries'
 
 export interface Execution {
   id: string
@@ -11,13 +18,14 @@ export interface Execution {
   workflowVersion: number
   currentState: string
   status: ExecutionStatus
-  input: Record<string, string>
+  input: Array<{ key: string; value: string }>
   createdAt: string
   updatedAt: string
+  auditEvents?: AuditEvent[]
 }
 
 export interface ExecutionStatus {
-  state: string
+  type: string
   reason?: string
 }
 
@@ -26,7 +34,7 @@ export interface AuditEvent {
   executionId: string
   eventType: string
   actor: string
-  details: Record<string, unknown>
+  details: string
   timestamp: string
 }
 
@@ -47,6 +55,26 @@ export interface AdvanceExecutionRequest {
   correlationId?: string
 }
 
+interface ListExecutionsResponse {
+  listExecutions: ExecutionListResponse
+}
+
+interface GetExecutionResponse {
+  getExecution: Execution
+}
+
+interface GetAuditTrailResponse {
+  getAuditTrail: AuditEvent[]
+}
+
+interface StartExecutionResponse {
+  startExecution: Execution
+}
+
+interface AdvanceExecutionResponse {
+  advanceExecution: Execution
+}
+
 /**
  * List all executions with pagination
  */
@@ -55,26 +83,17 @@ export async function listExecutions(
   offset: number = 0,
   token?: string
 ): Promise<ExecutionListResponse> {
-  const url = new URL(EXECUTION_API_BASE, typeof window === 'undefined' ? 'http://localhost:3000' : window.location.origin)
-  url.pathname = `${EXECUTION_API_BASE}/executions`
-  url.searchParams.append('limit', String(limit))
-  url.searchParams.append('offset', String(offset))
-
-  const response = await fetchWithAuth(url.toString(), {
-    method: 'GET',
-  }, token)
-
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.message || 'Failed to list executions')
-  }
-
-  const items = await response.json()
-  return {
-    limit,
-    offset,
-    total: items.length,
-    items,
+  try {
+    const response = await graphqlRequest<ListExecutionsResponse>(
+      LIST_EXECUTIONS,
+      token,
+      { limit, offset }
+    )
+    return response.listExecutions
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : 'Failed to list executions'
+    )
   }
 }
 
@@ -85,18 +104,18 @@ export async function getExecution(
   executionId: string,
   token?: string
 ): Promise<Execution> {
-  const response = await fetchWithAuth(
-    `${EXECUTION_API_BASE}/executions/${executionId}`,
-    { method: 'GET' },
-    token
-  )
-
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.message || 'Failed to fetch execution')
+  try {
+    const response = await graphqlRequest<GetExecutionResponse>(
+      GET_EXECUTION,
+      token,
+      { id: executionId }
+    )
+    return response.getExecution
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : 'Failed to fetch execution'
+    )
   }
-
-  return response.json()
 }
 
 /**
@@ -106,18 +125,20 @@ export async function getAuditTrail(
   executionId: string,
   token?: string
 ): Promise<AuditEvent[]> {
-  const response = await fetchWithAuth(
-    `${EXECUTION_API_BASE}/executions/${executionId}/audit`,
-    { method: 'GET' },
-    token
-  )
-
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.message || 'Failed to fetch audit trail')
+  try {
+    const response = await graphqlRequest<GetAuditTrailResponse>(
+      GET_AUDIT_TRAIL,
+      token,
+      { executionId }
+    )
+    return response.getAuditTrail
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : 'Failed to fetch audit trail'
+    )
   }
-
-  return response.json()
 }
 
 /**
@@ -127,24 +148,29 @@ export async function startExecution(
   request: StartExecutionRequest,
   token?: string
 ): Promise<Execution> {
-  const response = await fetchWithAuth(
-    `${EXECUTION_API_BASE}/executions`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    },
-    token
-  )
+  try {
+    const input = {
+      workflowId: request.workflowId,
+      workflowVersion: request.workflowVersion,
+      input: Object.entries(request.input).map(([key, value]) => ({
+        key,
+        value,
+      })),
+    }
 
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.message || 'Failed to start execution')
+    const response = await graphqlRequest<StartExecutionResponse>(
+      START_EXECUTION,
+      token,
+      { input }
+    )
+    return response.startExecution
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : 'Failed to start execution'
+    )
   }
-
-  return response.json()
 }
 
 /**
@@ -155,41 +181,24 @@ export async function advanceExecution(
   request?: AdvanceExecutionRequest,
   token?: string
 ): Promise<Execution> {
-  const response = await fetchWithAuth(
-    `${EXECUTION_API_BASE}/executions/${executionId}/advance`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request || {}),
-    },
-    token
-  )
+  try {
+    const input = request
+      ? {
+          correlationId: request.correlationId,
+        }
+      : undefined
 
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.message || 'Failed to advance execution')
+    const response = await graphqlRequest<AdvanceExecutionResponse>(
+      ADVANCE_EXECUTION,
+      token,
+      { executionId, input }
+    )
+    return response.advanceExecution
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : 'Failed to advance execution'
+    )
   }
-
-  return response.json()
-}
-
-/**
- * Helper function to add auth header to requests
- */
-async function fetchWithAuth(
-  url: string,
-  init: RequestInit,
-  token?: string
-): Promise<Response> {
-  const headers = new Headers(init.headers)
-  
-  if (token) {
-    // Token might already include 'Bearer ' prefix
-    const authValue = token.startsWith('Bearer ') ? token : `Bearer ${token}`
-    headers.set('Authorization', authValue)
-  }
-
-  return fetch(url, { ...init, headers })
 }

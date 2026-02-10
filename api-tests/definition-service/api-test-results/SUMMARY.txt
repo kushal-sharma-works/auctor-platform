@@ -1,14 +1,14 @@
 Definition Service API Test Summary
 ====================================
-Timestamp: Sun Feb  8 10:05:23 UTC 2026
+Timestamp: Sat Feb  7 19:50:41 UTC 2026
 
 Created Resources:
-  Policy 1: 5796d2d9-5193-40cc-b20f-3d9cc72c1991 (High Value Order Policy)
-  Policy 2: 2f110042-7b17-458e-81e7-c664e52b6bbc (Shipping Eligibility Policy)
-  Workflow 1: 21e30f1e-0a3b-44eb-bc62-e3821000bdb8 (Order Approval Workflow)
-  Workflow 2: 4938bd1d-b8d2-44ba-8574-c77186801400 (Simple Two-State Workflow)
+  Policy 1: 9da1c1a0-a13e-4b79-a6cb-f474b132f09c (High Value Order Policy)
+  Policy 2: 4bbb99f8-2f29-4826-8070-7cc9df36e44a (Shipping Eligibility Policy)
+  Workflow 1: 8c9f959c-c8c5-4b38-90ef-e82a2d647893 (Order Approval Workflow)
+  Workflow 2: 0986b4a0-9260-4eba-9cd6-30cda52909c0 (Simple Two-State Workflow)
 
 Test Files Generated:
   Total Response Files: 19
 
-See ./api-test-results/test-log-20260208_100521.txt for detailed execution log
+See ./api-test-results/test-log-20260207_195039.txt for detailed execution log

@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { useState } from "react"
+import { useSelector } from "react-redux"
 import {
   Box,
   Button,
@@ -23,6 +24,7 @@ import {
 import { Layout } from "../../../components/Layout"
 import { Badge } from "../../../components/UI"
 import { usePolicy, usePublishPolicy } from "../../../hooks/useGraphql"
+import type { RootState } from "../../../store"
 
 export default function PolicyDetailPage() {
   const params = useParams()
@@ -30,6 +32,8 @@ export default function PolicyDetailPage() {
   const { data, isLoading, error, refetch } = usePolicy(policyId ?? "")
   const publishMutation = usePublishPolicy()
   const [publishError, setPublishError] = useState<string | null>(null)
+  const roles = useSelector((state: RootState) => state.session.roles)
+  const canAdmin = roles.includes("ADMIN")
 
   const policy = data?.policy
 
@@ -58,6 +62,11 @@ export default function PolicyDetailPage() {
           <Text fontSize="sm" color="slate.600">
             Review conditions, version history, and approval rules.
           </Text>
+          {policy && (
+            <Text fontSize="sm" color="slate.500">
+              Policy ID: <code>{policy.id}</code>
+            </Text>
+          )}
         </VStack>
         <HStack gap={2}>
           <Link href="/policies">
@@ -65,7 +74,7 @@ export default function PolicyDetailPage() {
               Back
             </Button>
           </Link>
-          {policy && (
+          {policy && canAdmin && (
             <Box
               title={policy.status !== "DRAFT" ? `Policy is ${policy.status} - only DRAFT policies can be published` : ""}
             >
@@ -89,23 +98,6 @@ export default function PolicyDetailPage() {
           Loading policy…
         </Text>
       )}
-      {error && (
-        <Alert status="error" borderRadius="md" mb={6}>
-          <AlertIcon />
-          <Box>
-            <AlertTitle>Unable to load policy</AlertTitle>
-          </Box>
-        </Alert>
-      )}
-      {publishError && (
-        <Alert status="error" borderRadius="md" mb={6}>
-          <AlertIcon />
-          <Box>
-            <AlertTitle>Publish Failed</AlertTitle>
-            <AlertDescription>{publishError}</AlertDescription>
-          </Box>
-        </Alert>
-      )}
 
       {policy && (
         <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={6}>
@@ -126,6 +118,14 @@ export default function PolicyDetailPage() {
                     </Text>
                     <Text fontSize="sm" fontWeight="medium" color="slate.900">
                       {policy.version}
+                    </Text>
+                  </Box>
+                  <Box>
+                    <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" color="slate.500" mb={1}>
+                      ID
+                    </Text>
+                    <Text fontSize="sm" fontWeight="medium" color="slate.900">
+                      {policy.id}
                     </Text>
                   </Box>
                   <Box>

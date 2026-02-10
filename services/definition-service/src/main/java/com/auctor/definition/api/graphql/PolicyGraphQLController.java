@@ -12,6 +12,7 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * GraphQL Controller for Policy operations.
@@ -27,12 +28,14 @@ public class PolicyGraphQLController {
     }
     
     @QueryMapping
+    @PreAuthorize("hasAnyRole('VIEWER', 'ADMIN', 'EXECUTOR')")
     public PolicyGraphQLDto policy(@Argument String id) {
         PolicyDefinition policy = policyService.getById(new PolicyId(id));
         return PolicyGraphQLDto.from(policy);
     }
     
     @QueryMapping
+    @PreAuthorize("hasAnyRole('VIEWER', 'ADMIN', 'EXECUTOR')")
     public PolicyPageGraphQLDto policies(
         @Argument Integer page,
         @Argument Integer size
@@ -48,6 +51,7 @@ public class PolicyGraphQLController {
     }
     
     @MutationMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public PolicyGraphQLDto createPolicy(@Argument CreatePolicyInput input) {
         PolicyDefinition policy = policyService.create(
             input.name(),
@@ -60,6 +64,7 @@ public class PolicyGraphQLController {
     }
     
     @MutationMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public PolicyGraphQLDto publishPolicy(@Argument String id) {
         PolicyDefinition policy = policyService.publish(new PolicyId(id));
         return PolicyGraphQLDto.from(policy);

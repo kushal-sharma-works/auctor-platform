@@ -3,7 +3,7 @@
     "name": "00-health-check",
     "method": "GET",
     "url": "http://localhost:8081/actuator/health",
-    "timestamp": "Sun Feb  8 10:05:22 UTC 2026",
+    "timestamp": "Sat Feb  7 19:50:39 UTC 2026",
     "body": null
   },
   "response": {
@@ -26,7 +26,7 @@
           "status": "UP",
           "details": {
             "total": 33636024320,
-            "free": 12370046976,
+            "free": 13462380544,
             "threshold": 10485760,
             "path": "/workspaces/auctor-platform/services/definition-service/.",
             "exists": true
