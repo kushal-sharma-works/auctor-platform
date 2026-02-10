@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: auctor-dev
+  namespace: argocd
+spec:
+  project: auctor
+  source:
+    repoURL: https://github.com/kushal-sharma-works/auctor-platform
+    path: infra/helm
+    targetRevision: main
+    helm:
+      valueFiles:
+        - values-dev.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: auctor
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

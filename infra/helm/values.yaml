@@ -1,9 +1,55 @@
 image:
-  registry: "acr.azurecr.io"  # Update with your Azure Container Registry
+  registry: "acr.azurecr.io"
   tag: "latest"
   pullPolicy: IfNotPresent
 
 replicaCount: 1
+environment: dev
+logLevel: INFO
+
+services:
+  definition:
+    httpPort: 8081
+    grpcPort: 9090
+  execution:
+    httpPort: 8082
+  web:
+    httpPort: 3000
+
+config:
+  otelExporterEndpoint: "http://otel-collector:4317"
+  definition:
+    datasourceUrl: "jdbc:postgresql://postgresql:5432/definition"
+    datasourceUser: "definition"
+    jwtIssuer: "auctor-auth"
+    jwtAudience: "definition-service"
+  execution:
+    dbUrl: "jdbc:postgresql://postgresql:5432/execution"
+    dbUser: "execution"
+    redisUrl: "redis://redis:6379"
+  web:
+    otelExporterEndpoint: "http://localhost:4318/v1/traces"
+
+secrets:
+  definitionDbPassword: "definition"
+  executionDbPassword: "execution"
+  definitionJwtSecret: "change-me"
+
+ingress:
+  enabled: true
+  className: nginx
+  host: "auctor.example.com"
+  annotations: {}
+  tls:
+    enabled: false
+    secretName: ""
+
+hpa:
+  execution:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
 
 resources:
   limits:
@@ -12,6 +58,3 @@ resources:
   requests:
     cpu: "250m"
     memory: "256Mi"
-ingress:
-  host: "auctor.example.com"  # Update with your domain
-  enabled: true

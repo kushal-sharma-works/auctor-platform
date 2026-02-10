@@ -1,42 +1,83 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: execution-service
+  name: {{ include "auctor.serviceName" (dict "context" . "name" "execution-service") }}
   labels:
-    app: execution-service
+    {{- include "auctor.labels" (dict "context" . "name" "execution-service") | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: execution-service
+      {{- include "auctor.selectorLabels" (dict "context" . "name" "execution-service") | nindent 6 }}
   template:
     metadata:
       labels:
-        app: execution-service
+        {{- include "auctor.selectorLabels" (dict "context" . "name" "execution-service") | nindent 8 }}
     spec:
       containers:
-        - name: execution
+        - name: execution-service
           image: "{{ .Values.image.registry }}/execution-service:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: 8082
-              name: graphql
+            - containerPort: {{ .Values.services.execution.httpPort }}
+              name: http
           env:
             - name: ENVIRONMENT
-              value: "{{ .Values.environment }}"
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: ENVIRONMENT
             - name: LOG_LEVEL
-              value: "{{ .Values.logLevel }}"
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: LOG_LEVEL
+            - name: EXECUTION_DB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: EXECUTION_DB_URL
+            - name: EXECUTION_DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: EXECUTION_DB_USER
+            - name: EXECUTION_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "auctor.fullname" . }}-secrets
+                  key: EXECUTION_DB_PASSWORD
+            - name: EXECUTION_GRPC_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: EXECUTION_GRPC_HOST
+            - name: EXECUTION_GRPC_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: EXECUTION_GRPC_PORT
+            - name: EXECUTION_REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: EXECUTION_REDIS_URL
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: OTEL_EXPORTER_OTLP_ENDPOINT
           readinessProbe:
             httpGet:
               path: /health
-              port: 8082
+              port: {{ .Values.services.execution.httpPort }}
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 3
           livenessProbe:
             httpGet:
               path: /health
-              port: 8082
+              port: {{ .Values.services.execution.httpPort }}
             initialDelaySeconds: 20
             periodSeconds: 15
             timeoutSeconds: 3

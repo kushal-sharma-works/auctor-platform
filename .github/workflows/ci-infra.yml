@@ -1,0 +1,36 @@
+name: CI - Infrastructure
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/ci-infra.yml'
+  pull_request:
+    paths:
+      - 'infra/**'
+
+jobs:
+  terraform-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+      - name: Terraform init
+        working-directory: infra/terraform/azure
+        run: terraform init -backend=false
+      - name: Terraform validate
+        working-directory: infra/terraform/azure
+        run: terraform validate
+
+  helm-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.2
+      - name: Helm lint
+        working-directory: infra/helm
+        run: helm lint .

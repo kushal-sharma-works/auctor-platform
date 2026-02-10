@@ -1,0 +1,69 @@
+name: Deploy - SIT
+on:
+  workflow_dispatch:
+    inputs:
+      git_ref:
+        description: "Branch, tag, or commit to deploy"
+        required: true
+        default: "main"
+      image_tag:
+        description: "Container image tag to deploy"
+        required: false
+        default: ""
+      ingress_host:
+        description: "SIT domain (Ingress host)"
+        required: false
+        default: "auctor-platform.sit.example.com"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Resolve image tag
+        id: vars
+        shell: bash
+        run: |
+          if [[ -n "${{ inputs.image_tag }}" ]]; then
+            echo "tag=${{ inputs.image_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Login to ACR
+        shell: bash
+        run: |
+          ACR_LOGIN_SERVER="${{ secrets.ACR_LOGIN_SERVER }}"
+          ACR_NAME="${ACR_LOGIN_SERVER%%.azurecr.io}"
+          az acr login --name "$ACR_NAME"
+      - name: Build and push images
+        shell: bash
+        run: |
+          TAG="${{ steps.vars.outputs.tag }}"
+          REGISTRY="${{ secrets.ACR_LOGIN_SERVER }}"
+          docker build -t "$REGISTRY/definition-service:$TAG" services/definition-service
+          docker build -t "$REGISTRY/execution-service:$TAG" services/execution-service
+          docker build -t "$REGISTRY/web:$TAG" web
+          docker push "$REGISTRY/definition-service:$TAG"
+          docker push "$REGISTRY/execution-service:$TAG"
+          docker push "$REGISTRY/web:$TAG"
+      - uses: azure/aks-set-context@v4
+        with:
+          resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.2
+      - name: Deploy Helm chart
+        working-directory: infra/helm
+        run: |
+          helm upgrade --install auctor-sit . \
+            -n auctor --create-namespace \
+            -f values-sit.yaml \
+            --set image.registry=${{ secrets.ACR_LOGIN_SERVER }} \
+            --set image.tag=${{ steps.vars.outputs.tag }} \
+            --set ingress.host=${{ inputs.ingress_host }}
