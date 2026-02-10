@@ -263,7 +263,7 @@ class DefinitionGrpcClient : AutoCloseable {
     private fun attachAuthHeader(authHeader: String?): DefinitionServiceGrpc.DefinitionServiceBlockingStub {
         return if (!authHeader.isNullOrBlank()) {
             val metadata = Metadata().apply {
-                val authKey = Metadata.Key.of("Authorization", Metadata.ASCII_STRING_MARSHALLER)
+                val authKey = Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER)
                 put(authKey, authHeader)
             }
             blockingStub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))

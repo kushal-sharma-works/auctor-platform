@@ -36,7 +36,8 @@ export function useExecution(executionId: string) {
     queryKey: ['execution', executionId, token],
     queryFn: () => getExecution(executionId, token || undefined),
     enabled: Boolean(executionId) && Boolean(token),
-    refetchInterval: 2000, // Refetch every 2 seconds to get latest status
+    refetchInterval: (data) =>
+      data?.status?.type?.toLowerCase() === 'running' ? 2000 : false,
   })
 }
 

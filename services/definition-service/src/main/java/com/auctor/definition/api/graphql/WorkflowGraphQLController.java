@@ -12,6 +12,7 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * GraphQL Controller for Workflow operations.
@@ -27,12 +28,14 @@ public class WorkflowGraphQLController {
     }
     
     @QueryMapping
+    @PreAuthorize("hasAnyRole('VIEWER', 'ADMIN', 'EXECUTOR')")
     public WorkflowGraphQLDto workflow(@Argument String id) {
         WorkflowDefinition workflow = workflowService.getById(new WorkflowId(id));
         return WorkflowGraphQLDto.from(workflow);
     }
     
     @QueryMapping
+    @PreAuthorize("hasAnyRole('VIEWER', 'ADMIN', 'EXECUTOR')")
     public WorkflowPageGraphQLDto workflows(
         @Argument Integer page,
         @Argument Integer size
@@ -48,6 +51,7 @@ public class WorkflowGraphQLController {
     }
     
     @MutationMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public WorkflowGraphQLDto createWorkflow(@Argument CreateWorkflowInput input) {
         WorkflowDefinition workflow = workflowService.create(
             input.name(),
@@ -62,6 +66,7 @@ public class WorkflowGraphQLController {
     }
     
     @MutationMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public WorkflowGraphQLDto publishWorkflow(@Argument String id) {
         WorkflowDefinition workflow = workflowService.publish(new WorkflowId(id));
         return WorkflowGraphQLDto.from(workflow);

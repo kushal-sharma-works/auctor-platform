@@ -227,6 +227,9 @@ export default function NewWorkflowPage() {
                   Enter states first to add transitions
                 </Alert>
               ) : (
+                <Text fontSize="xs" color="gray.500" mb={2}>
+                  Use the policy ID (not the name) when linking a policy.
+                </Text>
                 <VStack spacing={3} align="stretch">
                   {fields.map((field, index) => (
                     <HStack key={field.id} gap={2} align="flex-start">

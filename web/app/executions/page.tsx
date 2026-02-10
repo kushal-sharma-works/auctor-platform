@@ -25,6 +25,7 @@ import {
 import { Layout } from "../../components/Layout"
 import { Badge } from "../../components/UI"
 import { useExecutions } from "../../hooks/useExecution"
+import { useWorkflows } from "../../hooks/useGraphql"
 import { StartExecutionModal } from "../../components/StartExecutionModal"
 import { useSelector } from "react-redux"
 import type { RootState } from "../../store"
@@ -34,7 +35,14 @@ export default function ExecutionsPage() {
   const [isStartModalOpen, setIsStartModalOpen] = useState(false)
   const size = 10
   const { data, isLoading, error } = useExecutions(page, size)
+  const { data: workflowData } = useWorkflows(0, 200)
   const executions = data?.items
+    const workflowNameById = new Map(
+      (workflowData?.workflows?.content || []).map((workflow) => [workflow.id, workflow.name])
+    )
+
+    const formatWorkflowName = (workflowId: string) =>
+      workflowNameById.get(workflowId) || workflowId
   const roles = useSelector((state: RootState) => state.session.roles)
   const canExecute = roles.includes("EXECUTOR") || roles.includes("ADMIN")
 
@@ -126,7 +134,7 @@ export default function ExecutionsPage() {
                       <code>{execution.id.substring(0, 8)}...</code>
                     </Td>
                     <Td px={8} py={6} fontSize="lg" color="purple.700">
-                      {execution.workflowId}
+                      {formatWorkflowName(execution.workflowId)}
                     </Td>
                     <Td px={8} py={6} fontSize="lg" color="purple.700">
                       <code>{execution.currentState}</code>

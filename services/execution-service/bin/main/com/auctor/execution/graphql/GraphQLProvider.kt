@@ -6,8 +6,10 @@ import com.auctor.execution.domain.ExecutionRepository
 import com.auctor.execution.domain.AuditRepository
 import com.auctor.execution.domain.Execution
 import com.auctor.execution.domain.AuditEvent
+import com.auctor.execution.domain.ExecutionNotFoundException
 import com.auctor.execution.domain.StateTransitionRequest
 import com.auctor.execution.domain.ExecutionId
+import com.auctor.execution.security.AuthContext
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.execution.AsyncExecutionStrategy
@@ -37,6 +39,28 @@ class GraphQLProvider(
 ) {
 
     private val graphQL: GraphQL = build()
+
+    private class AuthzException(message: String) : RuntimeException(message)
+
+    private fun requireRole(authContext: AuthContext?, requiredRole: String) {
+        if (authContext == null) {
+            throw AuthzException("FORBIDDEN: missing auth context")
+        }
+        val roles = authContext.roles
+        val effectiveRoles = (roles + "EXECUTOR").distinct()
+        if (effectiveRoles.contains("ADMIN") || effectiveRoles.contains(requiredRole)) {
+            return
+        }
+        if (requiredRole == "VIEWER" && effectiveRoles.contains("EXECUTOR")) {
+            return
+        }
+        throw AuthzException("FORBIDDEN: missing role $requiredRole")
+    }
+
+    private fun authContextFromEnv(env: graphql.schema.DataFetchingEnvironment): AuthContext? {
+        val context = env.getContext<Map<String, Any>?>()
+        return context?.get("authContext") as? AuthContext
+    }
 
     private fun build(): GraphQL {
         val schemaStream = javaClass.classLoader.getResourceAsStream("graphql/schema.graphqls")
@@ -78,7 +102,9 @@ class GraphQLProvider(
             val id = env.getArgument<String?>("id") ?: ""
             val version = env.getArgument<Int?>("version") ?: 1
             val context = env.getContext<Map<String, Any>?>()
-            val authHeader = context?.get("authorization") as? String
+            val authContext = authContextFromEnv(env)
+            requireRole(authContext, "VIEWER")
+            val authHeader = authContext?.rawToken ?: (context?.get("authorization") as? String)
 
             scope.future {
                 val workflow = cacheService.getWorkflowCached(id, version, authHeader)
@@ -100,6 +126,8 @@ class GraphQLProvider(
         DataFetcher { env ->
             val limit = env.getArgument<Int?>("limit") ?: 20
             val offset = env.getArgument<Int?>("offset") ?: 0
+            val authContext = authContextFromEnv(env)
+            requireRole(authContext, "VIEWER")
 
             scope.future {
                 try {
@@ -114,12 +142,7 @@ class GraphQLProvider(
                     )
                 } catch (e: Exception) {
                     logger.error("Error listing executions", e)
-                    mapOf(
-                        "limit" to limit,
-                        "offset" to offset,
-                        "total" to 0,
-                        "items" to emptyList<Map<String, Any?>>()
-                    )
+                    throw RuntimeException("Failed to list executions", e)
                 }
             }
         }
@@ -130,14 +153,17 @@ class GraphQLProvider(
     private fun getExecutionFetcher(): DataFetcher<CompletableFuture<Map<String, Any?>?>> =
         DataFetcher { env ->
             val executionId = env.getArgument<String>("id")
+            val authContext = authContextFromEnv(env)
+            requireRole(authContext, "VIEWER")
 
             scope.future {
                 try {
                     val execution = executionRepository.findById(ExecutionId(executionId))
                     execution?.let { formatExecution(it) }
+                        ?: throw ExecutionNotFoundException("Execution $executionId not found")
                 } catch (e: Exception) {
                     logger.error("Error fetching execution $executionId", e)
-                    null
+                    throw RuntimeException("Failed to fetch execution $executionId", e)
                 }
             }
         }
@@ -148,6 +174,8 @@ class GraphQLProvider(
     private fun getAuditTrailFetcher(): DataFetcher<CompletableFuture<List<Map<String, Any?>>>> =
         DataFetcher { env ->
             val executionId = env.getArgument<String>("executionId")
+            val authContext = authContextFromEnv(env)
+            requireRole(authContext, "VIEWER")
 
             scope.future {
                 try {
@@ -155,7 +183,7 @@ class GraphQLProvider(
                     auditEvents.map { formatAuditEvent(it) }
                 } catch (e: Exception) {
                     logger.error("Error fetching audit trail for $executionId", e)
-                    emptyList()
+                    throw RuntimeException("Failed to fetch audit trail for $executionId", e)
                 }
             }
         }
@@ -167,6 +195,8 @@ class GraphQLProvider(
         DataFetcher { env ->
             val execution = env.getSource<Map<String, Any?>>()
             val executionId = execution["id"] as? String ?: return@DataFetcher CompletableFuture.completedFuture(emptyList())
+            val authContext = authContextFromEnv(env)
+            requireRole(authContext, "VIEWER")
 
             scope.future {
                 try {
@@ -174,7 +204,7 @@ class GraphQLProvider(
                     auditEvents.map { formatAuditEvent(it) }
                 } catch (e: Exception) {
                     logger.error("Error fetching audit events for $executionId", e)
-                    emptyList()
+                    throw RuntimeException("Failed to fetch audit events for $executionId", e)
                 }
             }
         }
@@ -195,7 +225,9 @@ class GraphQLProvider(
                 key to value
             }
             val context = env.getContext<Map<String, Any>?>()
-            val authHeader = context?.get("authorization") as? String
+            val authContext = authContextFromEnv(env)
+            requireRole(authContext, "EXECUTOR")
+            val authHeader = authContext?.rawToken ?: (context?.get("authorization") as? String)
 
             scope.future {
                 try {
@@ -209,17 +241,8 @@ class GraphQLProvider(
                     formatExecution(execution)
                 } catch (e: Exception) {
                     logger.error("Error starting execution", e)
-                    mapOf(
-                        "id" to UUID.randomUUID().toString(),
-                        "workflowId" to workflowId,
-                        "workflowVersion" to workflowVersion,
-                        "currentState" to "ERROR",
-                        "status" to mapOf("type" to "ERROR", "reason" to e.message),
-                        "input" to emptyList<Map<String, String>>(),
-                        "auditEvents" to emptyList<Map<String, Any?>>(),
-                        "createdAt" to "",
-                        "updatedAt" to ""
-                    )
+                    val detail = e.message ?: e::class.simpleName ?: "Unknown error"
+                    throw RuntimeException("Failed to start execution: $detail", e)
                 }
             }
         }
@@ -233,7 +256,9 @@ class GraphQLProvider(
             val input = env.getArgument<Map<String, String>?>("input")
             val correlationId = input?.get("correlationId") as? String ?: UUID.randomUUID().toString()
             val context = env.getContext<Map<String, Any>?>()
-            val authHeader = context?.get("authorization") as? String
+            val authContext = authContextFromEnv(env)
+            requireRole(authContext, "EXECUTOR")
+            val authHeader = authContext?.rawToken ?: (context?.get("authorization") as? String)
 
             scope.future {
                 try {
@@ -246,17 +271,8 @@ class GraphQLProvider(
                     formatExecution(execution)
                 } catch (e: Exception) {
                     logger.error("Error advancing execution $executionId", e)
-                    mapOf(
-                        "id" to executionId,
-                        "workflowId" to "",
-                        "workflowVersion" to 0,
-                        "currentState" to "ERROR",
-                        "status" to mapOf("type" to "ERROR", "reason" to e.message),
-                        "input" to emptyList<Map<String, String>>(),
-                        "auditEvents" to emptyList<Map<String, Any?>>(),
-                        "createdAt" to "",
-                        "updatedAt" to ""
-                    )
+                    val detail = e.message ?: e::class.simpleName ?: "Unknown error"
+                    throw RuntimeException("Failed to advance execution $executionId: $detail", e)
                 }
             }
         }

@@ -7,6 +7,8 @@ import com.auctor.execution.http.installGraphQlRoutes
 import com.auctor.execution.infra.db.ExposedAuditRepository
 import com.auctor.execution.infra.db.ExposedExecutionRepository
 import com.auctor.execution.observability.initTracing
+import com.auctor.execution.security.AuthContextPlugin
+import com.auctor.execution.security.configureAuth
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.serialization.kotlinx.json.*
@@ -25,10 +27,9 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("Application")
 
-fun main() {
-    embeddedServer(Netty, port = 8082) {
-        module()
-    }.start(wait = true)
+fun main(args: Array<String>) {
+    // Delegate to Ktor EngineMain to load application.conf without extra config dependencies.
+    EngineMain.main(args)
 }
 
 fun Application.module(
@@ -71,6 +72,10 @@ fun Application.module(
             )
         }
     }
+
+    // Authentication and auth context extraction
+    configureAuth()
+    install(AuthContextPlugin)
 
     // Create gRPC client (shared) - use provided one for testing or create default
     val actualGrpcClient = grpcClient ?: DefinitionGrpcClient(

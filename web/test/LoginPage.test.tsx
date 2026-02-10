@@ -24,6 +24,7 @@ const buildToken = (payload: Record<string, unknown>) => {
 describe("LoginPage", () => {
   beforeEach(() => {
     pushMock.mockClear()
+    process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN = "true"
     ;(global as any).fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -46,7 +47,7 @@ describe("LoginPage", () => {
       target: { value: "password" },
     })
 
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }))
+    fireEvent.click(screen.getByRole("button", { name: "Sign in (Dev)" }))
 
     await waitFor(() => {
       expect((global as any).fetch).toHaveBeenCalledWith(

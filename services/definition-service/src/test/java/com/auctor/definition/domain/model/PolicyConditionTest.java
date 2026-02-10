@@ -184,6 +184,25 @@ class PolicyConditionTest {
         // Then
         assertEquals("99.99", condition.value());
     }
+
+    @Test
+    void shouldRejectNonNumericValuesForNumericOperators() {
+        assertThrows(IllegalArgumentException.class, () ->
+            new PolicyCondition("delivery", Operator.LT, "7 Days")
+        );
+
+        assertThrows(IllegalArgumentException.class, () ->
+            new PolicyCondition("amount", Operator.GT, "one-hundred")
+        );
+
+        assertThrows(IllegalArgumentException.class, () ->
+            new PolicyCondition("score", Operator.GTE, "10x")
+        );
+
+        assertThrows(IllegalArgumentException.class, () ->
+            new PolicyCondition("threshold", Operator.LTE, "<=5")
+        );
+    }
     
     @Test
     void shouldHandleNegativeNumbers() {

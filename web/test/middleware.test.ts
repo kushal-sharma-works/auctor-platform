@@ -23,4 +23,12 @@ describe("middleware", () => {
     const response = middleware(request)
     expect(response?.headers.get("location")).toBeNull()
   })
+
+  it("skips auth for non-GET requests", () => {
+    const request = new NextRequest("http://localhost/workflows", {
+      method: "POST",
+    })
+    const response = middleware(request)
+    expect(response?.headers.get("location")).toBeNull()
+  })
 })

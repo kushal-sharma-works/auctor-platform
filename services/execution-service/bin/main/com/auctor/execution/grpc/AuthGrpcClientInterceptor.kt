@@ -8,6 +8,9 @@ class AuthGrpcClientInterceptor(
 ) : ClientInterceptor {
 
     companion object {
+        val AUTHORIZATION_KEY: Metadata.Key<String> =
+            Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER)
+
         val USER_ID_KEY: Metadata.Key<String> =
             Metadata.Key.of("x-user-id", Metadata.ASCII_STRING_MARSHALLER)
 
@@ -25,8 +28,9 @@ class AuthGrpcClientInterceptor(
             next.newCall(method, callOptions)
         ) {
             override fun start(responseListener: Listener<RespT>, headers: Metadata) {
-                headers.put(USER_ID_KEY, authContext.userId)
+                headers.put(USER_ID_KEY, authContext.subject)
                 headers.put(ROLES_KEY, authContext.roles.joinToString(","))
+                authContext.rawToken?.let { headers.put(AUTHORIZATION_KEY, it) }
 
                 super.start(responseListener, headers)
             }

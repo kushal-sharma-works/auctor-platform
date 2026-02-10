@@ -158,7 +158,13 @@ class ExecutionEngine(
 
         if (selectedTransition == null) {
             policyAuditEvents.forEach { auditRepository.append(it) }
-            throw IllegalStateException("No allowed transitions from state ${execution.currentState}")
+            val detail = policyAuditEvents.joinToString("; ") { event ->
+                val policyLabel = event.policyId ?: "unknown-policy"
+                val explanation = event.explanation ?: "no explanation"
+                "$policyLabel -> $explanation"
+            }
+            val suffix = if (detail.isBlank()) "" else ": $detail"
+            throw IllegalStateException("No allowed transitions from state ${execution.currentState}$suffix")
         }
 
         val newState = selectedTransition.toState

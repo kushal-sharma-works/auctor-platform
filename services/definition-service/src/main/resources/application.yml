@@ -41,6 +41,13 @@ logging:
     io.grpc: DEBUG
     root: INFO
 
+security:
+  jwt:
+    secret: ${DEFINITION_JWT_SECRET:dev-secret-change-later-dev-secret-change-later}
+    issuer: ${DEFINITION_JWT_ISSUER:auctor-auth}
+    audience: ${DEFINITION_JWT_AUDIENCE:definition-service}
+    jwks-uri: ${DEFINITION_JWT_JWKS_URI:}
+
 
 management:
   endpoints:

@@ -8,7 +8,10 @@ import com.auctor.execution.grpc.DefinitionGrpcClient
 import com.auctor.execution.graphql.GraphQLProvider
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import com.auctor.execution.security.toAuthContext
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -57,41 +60,51 @@ fun Route.installGraphQlRoutes(
         call.respond(HttpStatusCode.OK)
     }
     
-    route("/graphql") {
-        post {
-            // Add CORS headers to response
-            call.response.headers.append("Access-Control-Allow-Origin", "*")
-            
-            try {
-                // Read raw request body as string
-                val body = call.receiveText()
-                val json = Json.parseToJsonElement(body).jsonObject
-                
-                val query = json["query"]?.jsonPrimitive?.content
-                val variables = json["variables"]?.let { element ->
-                    if (element is JsonObject) {
-                        element.toMap().mapValues { (_, v) -> jsonElementToAny(v) }
-                    } else {
-                        null
+    authenticate("auth-jwt") {
+        route("/graphql") {
+            post {
+                // Add CORS headers to response
+                call.response.headers.append("Access-Control-Allow-Origin", "*")
+
+                try {
+                    // Read raw request body as string
+                    val body = call.receiveText()
+                    val json = Json.parseToJsonElement(body).jsonObject
+
+                    val query = json["query"]?.jsonPrimitive?.content
+                    val variables = json["variables"]?.let { element ->
+                        if (element is JsonObject) {
+                            element.toMap().mapValues { (_, v) -> jsonElementToAny(v) }
+                        } else {
+                            null
+                        }
                     }
-                }
-                
-                if (query.isNullOrBlank()) {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "query is required", "data" to null))
-                    return@post
-                }
 
-                // Authorization header is optional; auth is disabled in dev
-                val authHeader = call.request.header("Authorization")
-                val context: Map<String, Any>? = authHeader?.let { mapOf("authorization" to it) }
+                    if (query.isNullOrBlank()) {
+                        call.respond(HttpStatusCode.BadRequest, mapOf("error" to "query is required", "data" to null))
+                        return@post
+                    }
 
-                val result = gqlProvider.execute(query, variables, context)
-                call.respond(anyToJsonElement(result))
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.BadRequest, mapOf(
-                    "error" to (e.message ?: "Unknown error"),
-                    "data" to null
-                ))
+                    val authHeader = call.request.headers["Authorization"]
+                    val principal = call.principal<JWTPrincipal>()
+                    if (principal == null) {
+                        call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "missing auth context", "data" to null))
+                        return@post
+                    }
+                    val authContext = principal.toAuthContext(authHeader)
+                    val context = buildMap<String, Any> {
+                        authContext.rawToken?.let { put("authorization", it) }
+                        put("authContext", authContext)
+                    }
+
+                    val result = gqlProvider.execute(query, variables, context)
+                    call.respond(anyToJsonElement(result))
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf(
+                        "error" to (e.message ?: "Unknown error"),
+                        "data" to null
+                    ))
+                }
             }
         }
     }
@@ -108,9 +121,9 @@ fun Route.installGraphQlRoutes(
         get {
             val authHeader = call.request.header("Authorization")
             call.respond(mapOf(
-                "message" to "Auth is disabled; Authorization header is optional and ignored by the server",
+                "message" to "Auth is enabled; include Authorization: Bearer <JWT_TOKEN>",
                 "receivedAuthHeader" to authHeader,
-                "format" to "Authorization: Bearer <JWT_TOKEN> (optional)"
+                "format" to "Authorization: Bearer <JWT_TOKEN>"
             ))
         }
     }

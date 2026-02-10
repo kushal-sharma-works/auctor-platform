@@ -8,6 +8,9 @@ const isPublicPath = (pathname: string) =>
   pathname.startsWith("/favicon.ico")
 
 export function middleware(request: NextRequest) {
+  if (request.method !== "GET") {
+    return NextResponse.next()
+  }
   const { pathname } = request.nextUrl
   if (isPublicPath(pathname)) {
     return NextResponse.next()
@@ -25,5 +28,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/:path*"],
+  matcher: ["/((?!api|_next|favicon.ico).*)"],
 }

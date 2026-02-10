@@ -25,12 +25,24 @@ import { Alert, AlertIcon } from "@chakra-ui/react"
 import { useSelector } from "react-redux"
 import type { RootState } from "../../../store"
 
+const numericOperators = new Set(["GT", "LT", "GTE", "LTE"])
+
+const isNumeric = (value: string) => /^-?\d+(\.\d+)?$/.test(value.trim())
+
 const conditionSchema = z.object({
   field: z.string().min(1, "Field is required"),
   operator: z.enum(["EQ", "NEQ", "GT", "LT", "GTE", "LTE", "IN", "NOT_IN"], {
     required_error: "Operator is required",
   }),
   value: z.string().min(1, "Value is required"),
+}).superRefine((condition, ctx) => {
+  if (numericOperators.has(condition.operator) && !isNumeric(condition.value)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["value"],
+      message: "Value must be a number for this operator",
+    })
+  }
 })
 
 const policySchema = z.object({

@@ -2,13 +2,8 @@ package com.auctor.execution.security
 
 import io.ktor.server.auth.jwt.*
 
-data class AuthContext(
-    val userId: String,
-    val roles: List<String>
-)
+val JWTPrincipal.subjectId: String
+    get() = payload.subject ?: "unknown"
 
-fun JWTPrincipal.toAuthContext(): AuthContext =
-    AuthContext(
-        userId = payload.subject ?: "unknown",
-        roles = payload.getClaim("roles")?.asList(String::class.java) ?: emptyList()
-    )
+val JWTPrincipal.roles: List<String>
+    get() = payload.getClaim("roles")?.asList(String::class.java) ?: emptyList()
