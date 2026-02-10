@@ -34,6 +34,7 @@ dependencies {
 
     // Logging
     implementation("ch.qos.logback:logback-classic:1.5.6")
+    implementation("net.logstash.logback:logstash-logback-encoder:7.4")
 
     // gRPC client
     implementation("io.grpc:grpc-netty-shaded:1.63.0")
@@ -79,6 +80,7 @@ dependencies {
     implementation("io.opentelemetry:opentelemetry-exporter-otlp:1.40.0")
     implementation("io.opentelemetry:opentelemetry-api:1.40.0")
     implementation("io.opentelemetry.semconv:opentelemetry-semconv:1.25.0-alpha")
+    implementation("io.opentelemetry.instrumentation:opentelemetry-grpc-1.6:2.4.0-alpha")
     
     // Micrometer
     implementation("io.micrometer:micrometer-core:1.13.0")

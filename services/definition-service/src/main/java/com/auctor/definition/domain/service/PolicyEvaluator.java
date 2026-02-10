@@ -1,6 +1,8 @@
 package com.auctor.definition.domain.service;
 
 import com.auctor.definition.domain.model.*;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -12,24 +14,41 @@ import java.util.stream.Collectors;
  * Uses pattern matching for operator evaluation.
  */
 public class PolicyEvaluator {
+
+    private final MeterRegistry meterRegistry;
+    private final Timer evaluationTimer;
+
+    public PolicyEvaluator(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+        this.evaluationTimer = meterRegistry.timer("policy.evaluation.duration");
+    }
     
     /**
      * Evaluate a policy definition against a context.
      * All conditions must pass (AND logic).
      */
     public EvaluationResult evaluate(PolicyDefinition policy, Map<String, Object> context) {
+        Timer.Sample sample = Timer.start(meterRegistry);
         StringBuilder explanation = new StringBuilder();
         
-        for (PolicyCondition condition : policy.conditions()) {
-            boolean conditionPassed = evaluateCondition(condition, context, explanation);
-            
-            if (!conditionPassed) {
-                return new EvaluationResult(false, explanation.toString());
+        try {
+            for (PolicyCondition condition : policy.conditions()) {
+                boolean conditionPassed = evaluateCondition(condition, context, explanation);
+                
+                if (!conditionPassed) {
+                    EvaluationResult result = new EvaluationResult(false, explanation.toString());
+                    meterRegistry.counter("policy.evaluation.total", "result", "denied").increment();
+                    return result;
+                }
             }
+            
+            explanation.append("All conditions passed");
+            EvaluationResult result = new EvaluationResult(true, explanation.toString());
+            meterRegistry.counter("policy.evaluation.total", "result", "allowed").increment();
+            return result;
+        } finally {
+            sample.stop(evaluationTimer);
         }
-        
-        explanation.append("All conditions passed");
-        return new EvaluationResult(true, explanation.toString());
     }
     
     private boolean evaluateCondition(

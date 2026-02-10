@@ -6,6 +6,11 @@ import com.auctor.execution.grpc.DefinitionGrpcClient
 import com.auctor.execution.http.installGraphQlRoutes
 import com.auctor.execution.infra.db.ExposedAuditRepository
 import com.auctor.execution.infra.db.ExposedExecutionRepository
+import com.auctor.execution.observability.CorrelationIdPlugin
+import com.auctor.execution.observability.ExecutionMetrics
+import com.auctor.execution.observability.HealthService
+import com.auctor.execution.observability.HttpTracingPlugin
+import com.auctor.execution.observability.installMetricsRoute
 import com.auctor.execution.observability.initTracing
 import com.auctor.execution.security.AuthContextPlugin
 import com.auctor.execution.security.configureAuth
@@ -20,6 +25,13 @@ import io.ktor.server.routing.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.http.*
 import io.ktor.server.response.*
+import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics
+import io.micrometer.core.instrument.binder.system.ProcessorMetrics
+import io.micrometer.prometheus.PrometheusConfig
+import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.serialization.json.Json
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.sql.Database
@@ -77,6 +89,20 @@ fun Application.module(
     configureAuth()
     install(AuthContextPlugin)
 
+    // Initialize OpenTelemetry tracing
+    initTracing()
+    install(HttpTracingPlugin)
+    install(CorrelationIdPlugin)
+
+    // Metrics registry and standard JVM binders
+    val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    ClassLoaderMetrics().bindTo(meterRegistry)
+    JvmMemoryMetrics().bindTo(meterRegistry)
+    JvmGcMetrics().bindTo(meterRegistry)
+    JvmThreadMetrics().bindTo(meterRegistry)
+    ProcessorMetrics().bindTo(meterRegistry)
+    val executionMetrics = ExecutionMetrics(meterRegistry)
+
     // Create gRPC client (shared) - use provided one for testing or create default
     val actualGrpcClient = grpcClient ?: DefinitionGrpcClient(
         targetHost = System.getenv("EXECUTION_GRPC_HOST")
@@ -85,7 +111,8 @@ fun Application.module(
         targetPort = System.getenv("EXECUTION_GRPC_PORT")?.toIntOrNull()
             ?: environment.config.propertyOrNull("ktor.grpc.definition-service-port")?.getString()?.toInt()
             ?: 9090,
-        callDeadlineMs = 5000
+        callDeadlineMs = 5000,
+        metrics = executionMetrics
     )
 
     // Create cache service (shared) - use provided one for testing or create default
@@ -100,7 +127,8 @@ fun Application.module(
                 actualGrpcClient,
                 redisUrl = System.getenv("EXECUTION_REDIS_URL")
                     ?: environment.config.propertyOrNull("ktor.redis.url")?.getString()
-                    ?: "redis://localhost:6379"
+                    ?: "redis://localhost:6379",
+                metrics = executionMetrics
             )
         } catch (e: Exception) {
             logger.warn("Failed to connect to Redis, continuing without cache", e)
@@ -116,20 +144,22 @@ fun Application.module(
     val actualExecutionEngine = executionEngine ?: ExecutionEngine(
         executionRepository = executionRepository,
         auditRepository = auditRepository,
-        grpcClient = actualGrpcClient
+        grpcClient = actualGrpcClient,
+        metrics = executionMetrics
     )
 
-    // Initialize OpenTelemetry tracing
-    val openTelemetry = initTracing()
+    val healthService = HealthService(actualDataSource, actualGrpcClient)
 
     // Configure routes
     routing {
+        installMetricsRoute(meterRegistry)
         // GraphQL endpoints (includes health/ready)
         installGraphQlRoutes(
             cacheService = actualCacheService,
             executionEngine = actualExecutionEngine,
             executionRepository = executionRepository,
-            auditRepository = auditRepository
+            auditRepository = auditRepository,
+            healthService = healthService
         )
     }
 

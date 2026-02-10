@@ -34,6 +34,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/definition
       - SPRING_DATASOURCE_USERNAME=definition
       - SPRING_DATASOURCE_PASSWORD=definition
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     depends_on:
       postgres:
         condition: service_healthy
@@ -49,6 +50,7 @@ services:
       - EXECUTION_GRPC_HOST=definition-service
       - EXECUTION_GRPC_PORT=9090
       - EXECUTION_REDIS_URL=redis://redis:6379
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     depends_on:
       - definition-service
       - postgres
@@ -57,8 +59,33 @@ services:
     build: ./web
     ports:
       - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_OTEL_EXPORTER_ENDPOINT=http://localhost:4318/v1/traces
     depends_on:
       - execution-service
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./infra/monitoring/grafana/provisioning:/etc/grafana/provisioning
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
 
 volumes:
   postgres_data:

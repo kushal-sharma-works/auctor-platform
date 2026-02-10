@@ -1,10 +1,15 @@
 package com.auctor.execution.domain
 
 import com.auctor.execution.grpc.DefinitionGrpcClient
+import com.auctor.execution.observability.ExecutionMetrics
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeout
+import io.opentelemetry.api.GlobalOpenTelemetry
+import io.opentelemetry.api.trace.StatusCode
 import org.slf4j.LoggerFactory
 import java.time.Instant
+import java.time.Duration
 import java.util.*
 
 /**
@@ -20,9 +25,11 @@ import java.util.*
 class ExecutionEngine(
     private val executionRepository: ExecutionRepository,
     private val auditRepository: AuditRepository,
-    private val grpcClient: DefinitionGrpcClient
+    private val grpcClient: DefinitionGrpcClient,
+    private val metrics: ExecutionMetrics = ExecutionMetrics.noop()
 ) {
     private val logger = LoggerFactory.getLogger(ExecutionEngine::class.java)
+    private val tracer = GlobalOpenTelemetry.get().getTracer("com.auctor.execution.domain")
     
     /**
      * Start a new workflow execution.
@@ -35,51 +42,65 @@ class ExecutionEngine(
         actor: String,
         authHeader: String? = null
     ): Execution = coroutineScope {
-        logger.info("Starting execution for workflow $workflowId v$workflowVersion")
-        
-        // Fetch workflow definition via gRPC with timeout
-        val workflow = withTimeout(5000) {
-            grpcClient.getWorkflow(workflowId, workflowVersion, authHeader)
-        } ?: throw IllegalArgumentException("Workflow $workflowId v$workflowVersion not found")
-        
-        // Validate workflow is published
-        if (workflow.status != "PUBLISHED") {
-            throw IllegalStateException("Workflow ${workflow.id} v${workflow.version} is not PUBLISHED (status: ${workflow.status})")
+        withSpan("execution.start") {
+            try {
+                logger.info("Starting execution for workflow $workflowId v$workflowVersion")
+                
+                // Fetch workflow definition via gRPC with timeout
+                val workflow = withTimeout(5000) {
+                    withSpan("grpc.getWorkflow") {
+                        grpcClient.getWorkflow(workflowId, workflowVersion, authHeader)
+                    }
+                } ?: throw IllegalArgumentException("Workflow $workflowId v$workflowVersion not found")
+                
+                // Validate workflow is published
+                if (workflow.status != "PUBLISHED") {
+                    throw IllegalStateException("Workflow ${workflow.id} v${workflow.version} is not PUBLISHED (status: ${workflow.status})")
+                }
+                
+                // Create execution
+                val executionId = ExecutionId("exec-${UUID.randomUUID()}")
+                val now = Instant.now()
+                
+                val execution = Execution(
+                    id = executionId,
+                    workflowId = workflow.id,
+                    workflowVersion = workflow.version,
+                    currentState = workflow.initialState,
+                    status = ExecutionStatus.Running,
+                    input = input,
+                    createdAt = now,
+                    updatedAt = now
+                )
+                
+                // Save execution and record audit event atomically
+                val auditEvent = AuditEvent(
+                    id = "audit-${UUID.randomUUID()}",
+                    executionId = execution.id.value,
+                    timestamp = now,
+                    eventType = AuditEventType.EXECUTION_STARTED,
+                    fromState = null,
+                    toState = workflow.initialState,
+                    policyId = null,
+                    policyResult = null,
+                    explanation = "Execution started for workflow ${workflow.name} v${workflow.version}",
+                    actor = actor,
+                    correlationId = UUID.randomUUID().toString()
+                )
+                val savedExecution = withSpan("execution.persist") {
+                    executionRepository.saveWithAudit(execution, listOf(auditEvent))
+                }
+                metrics.recordExecutionStarted()
+                
+                logger.info("Execution ${savedExecution.id} started in state ${workflow.initialState}")
+                savedExecution
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                metrics.recordExecutionFailed()
+                throw e
+            }
         }
-        
-        // Create execution
-        val executionId = ExecutionId("exec-${UUID.randomUUID()}")
-        val now = Instant.now()
-        
-        val execution = Execution(
-            id = executionId,
-            workflowId = workflow.id,
-            workflowVersion = workflow.version,
-            currentState = workflow.initialState,
-            status = ExecutionStatus.Running,
-            input = input,
-            createdAt = now,
-            updatedAt = now
-        )
-        
-        // Save execution and record audit event atomically
-        val auditEvent = AuditEvent(
-            id = "audit-${UUID.randomUUID()}",
-            executionId = execution.id.value,
-            timestamp = now,
-            eventType = AuditEventType.EXECUTION_STARTED,
-            fromState = null,
-            toState = workflow.initialState,
-            policyId = null,
-            policyResult = null,
-            explanation = "Execution started for workflow ${workflow.name} v${workflow.version}",
-            actor = actor,
-            correlationId = UUID.randomUUID().toString()
-        )
-        val savedExecution = executionRepository.saveWithAudit(execution, listOf(auditEvent))
-        
-        logger.info("Execution ${savedExecution.id} started in state ${workflow.initialState}")
-        savedExecution
     }
     
     /**
@@ -92,138 +113,156 @@ class ExecutionEngine(
      * - Marks execution COMPLETED if new state has no outgoing transitions
      */
     suspend fun advanceExecution(request: StateTransitionRequest, authHeader: String? = null): Execution = coroutineScope {
-        logger.info("Advancing execution ${request.executionId}")
-        
-        // Load execution
-        val execution = executionRepository.findById(request.executionId)
-            ?: throw ExecutionNotFoundException("Execution ${request.executionId} not found")
-        
-        // Check if execution is already terminal
-        if (execution.status is ExecutionStatus.Completed || execution.status is ExecutionStatus.Failed) {
-            throw IllegalStateException("Execution ${execution.id} is already in terminal state: ${execution.status}")
-        }
-        
-        // Load workflow via gRPC with timeout
-        val workflow = withTimeout(5000) {
-            grpcClient.getWorkflow(execution.workflowId, execution.workflowVersion, authHeader)
-        } ?: throw IllegalStateException("Workflow ${execution.workflowId} v${execution.workflowVersion} not found")
-        
-        // Find valid transitions from current state
-        val validTransitions = workflow.transitions.filter { it.fromState == execution.currentState }
-        if (validTransitions.isEmpty()) {
-            throw IllegalStateException("No valid transitions from state ${execution.currentState}")
-        }
-        
-        // Select first allowed transition based on policy evaluation (if any)
-        val policyAuditEvents = mutableListOf<AuditEvent>()
-        var selectedTransition: com.auctor.execution.grpc.TransitionDto? = null
-        var selectedPolicyResult: com.auctor.execution.grpc.PolicyEvaluationResultDto? = null
-        for (candidate in validTransitions) {
-            if (candidate.policyRef.isNullOrBlank()) {
-                selectedTransition = candidate
-                break
-            }
+        withSpan("execution.advance") {
+            try {
+                logger.info("Advancing execution ${request.executionId}")
+                
+                // Load execution
+                val execution = executionRepository.findById(request.executionId)
+                    ?: throw ExecutionNotFoundException("Execution ${request.executionId} not found")
+                
+                // Check if execution is already terminal
+                if (execution.status is ExecutionStatus.Completed || execution.status is ExecutionStatus.Failed) {
+                    throw IllegalStateException("Execution ${execution.id} is already in terminal state: ${execution.status}")
+                }
+                
+                // Load workflow via gRPC with timeout
+                val workflow = withTimeout(5000) {
+                    withSpan("grpc.getWorkflow") {
+                        grpcClient.getWorkflow(execution.workflowId, execution.workflowVersion, authHeader)
+                    }
+                } ?: throw IllegalStateException("Workflow ${execution.workflowId} v${execution.workflowVersion} not found")
+                
+                // Find valid transitions from current state
+                val validTransitions = workflow.transitions.filter { it.fromState == execution.currentState }
+                if (validTransitions.isEmpty()) {
+                    throw IllegalStateException("No valid transitions from state ${execution.currentState}")
+                }
+                
+                // Select first allowed transition based on policy evaluation (if any)
+                val policyAuditEvents = mutableListOf<AuditEvent>()
+                var selectedTransition: com.auctor.execution.grpc.TransitionDto? = null
+                var selectedPolicyResult: com.auctor.execution.grpc.PolicyEvaluationResultDto? = null
+                for (candidate in validTransitions) {
+                    if (candidate.policyRef.isNullOrBlank()) {
+                        selectedTransition = candidate
+                        break
+                    }
 
-            val result = withTimeout(5000) {
-                grpcClient.evaluatePolicy(
-                    policyId = candidate.policyRef,
-                    version = 0, // 0 requests latest policy version
-                    context = execution.input,
-                    authHeader = authHeader
+                    val result = withTimeout(5000) {
+                        withSpan("policy.evaluate") {
+                            grpcClient.evaluatePolicy(
+                                policyId = candidate.policyRef,
+                                version = 0, // 0 requests latest policy version
+                                context = execution.input,
+                                authHeader = authHeader
+                            )
+                        }
+                    }
+
+                    policyAuditEvents.add(
+                        AuditEvent(
+                            id = "audit-${UUID.randomUUID()}",
+                            executionId = execution.id.value,
+                            timestamp = Instant.now(),
+                            eventType = AuditEventType.POLICY_EVALUATED,
+                            fromState = execution.currentState,
+                            toState = candidate.toState,
+                            policyId = candidate.policyRef,
+                            policyResult = result.allowed,
+                            explanation = result.explanation,
+                            actor = request.actor,
+                            correlationId = request.correlationId
+                        )
+                    )
+
+                    if (result.allowed) {
+                        selectedTransition = candidate
+                        selectedPolicyResult = result
+                        break
+                    }
+                }
+
+                if (selectedTransition == null) {
+                    policyAuditEvents.forEach { auditRepository.append(it) }
+                    val detail = policyAuditEvents.joinToString("; ") { event ->
+                        val policyLabel = event.policyId ?: "unknown-policy"
+                        val explanation = event.explanation ?: "no explanation"
+                        "$policyLabel -> $explanation"
+                    }
+                    val suffix = if (detail.isBlank()) "" else ": $detail"
+                    throw IllegalStateException("No allowed transitions from state ${execution.currentState}$suffix")
+                }
+
+                val newState = selectedTransition.toState
+                metrics.recordStateTransition(execution.currentState, newState)
+                
+                // Update execution state
+                val now = Instant.now()
+                val updatedExecution = execution.copy(
+                    currentState = newState,
+                    updatedAt = now
                 )
-            }
-
-            policyAuditEvents.add(
-                AuditEvent(
+                
+                // Record state transition audit event
+                val transitionAuditEvent = AuditEvent(
                     id = "audit-${UUID.randomUUID()}",
                     executionId = execution.id.value,
-                    timestamp = Instant.now(),
-                    eventType = AuditEventType.POLICY_EVALUATED,
+                    timestamp = now,
+                    eventType = AuditEventType.STATE_TRANSITION,
                     fromState = execution.currentState,
-                    toState = candidate.toState,
-                    policyId = candidate.policyRef,
-                    policyResult = result.allowed,
-                    explanation = result.explanation,
+                    toState = newState,
+                    policyId = selectedTransition.policyRef,
+                    policyResult = selectedPolicyResult?.allowed,
+                    explanation = "Transitioned from ${execution.currentState} to $newState",
                     actor = request.actor,
                     correlationId = request.correlationId
                 )
-            )
+                
+                // Check if new state has no outgoing transitions (terminal state)
+                val outgoingTransitions = workflow.transitions.filter { it.fromState == newState }
+                val auditEventsToPersist = mutableListOf<AuditEvent>()
+                auditEventsToPersist.addAll(policyAuditEvents)
+                auditEventsToPersist.add(transitionAuditEvent)
 
-            if (result.allowed) {
-                selectedTransition = candidate
-                selectedPolicyResult = result
-                break
+                val finalExecution = if (outgoingTransitions.isEmpty()) {
+                    logger.info("Execution ${execution.id} reached terminal state $newState")
+                    val completedExecution = updatedExecution.copy(status = ExecutionStatus.Completed)
+                    val duration = Duration.between(execution.createdAt, now)
+                    metrics.recordExecutionCompleted(duration)
+                    
+                    // Record completion audit event
+                    val completionAuditEvent = AuditEvent(
+                        id = "audit-${UUID.randomUUID()}",
+                        executionId = execution.id.value,
+                        timestamp = now,
+                        eventType = AuditEventType.EXECUTION_COMPLETED,
+                        fromState = newState,
+                        toState = null,
+                        policyId = null,
+                        policyResult = null,
+                        explanation = "Execution completed in state $newState",
+                        actor = request.actor,
+                        correlationId = request.correlationId
+                    )
+                    auditEventsToPersist.add(completionAuditEvent)
+                    
+                    completedExecution
+                } else {
+                    updatedExecution
+                }
+                
+                // Save and return
+                withSpan("execution.persist") {
+                    executionRepository.updateWithAudit(finalExecution, auditEventsToPersist)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                metrics.recordExecutionFailed()
+                throw e
             }
         }
-
-        if (selectedTransition == null) {
-            policyAuditEvents.forEach { auditRepository.append(it) }
-            val detail = policyAuditEvents.joinToString("; ") { event ->
-                val policyLabel = event.policyId ?: "unknown-policy"
-                val explanation = event.explanation ?: "no explanation"
-                "$policyLabel -> $explanation"
-            }
-            val suffix = if (detail.isBlank()) "" else ": $detail"
-            throw IllegalStateException("No allowed transitions from state ${execution.currentState}$suffix")
-        }
-
-        val newState = selectedTransition.toState
-        
-        // Update execution state
-        val now = Instant.now()
-        val updatedExecution = execution.copy(
-            currentState = newState,
-            updatedAt = now
-        )
-        
-        // Record state transition audit event
-        val transitionAuditEvent = AuditEvent(
-            id = "audit-${UUID.randomUUID()}",
-            executionId = execution.id.value,
-            timestamp = now,
-            eventType = AuditEventType.STATE_TRANSITION,
-            fromState = execution.currentState,
-            toState = newState,
-            policyId = selectedTransition.policyRef,
-            policyResult = selectedPolicyResult?.allowed,
-            explanation = "Transitioned from ${execution.currentState} to $newState",
-            actor = request.actor,
-            correlationId = request.correlationId
-        )
-        
-        // Check if new state has no outgoing transitions (terminal state)
-        val outgoingTransitions = workflow.transitions.filter { it.fromState == newState }
-        val auditEventsToPersist = mutableListOf<AuditEvent>()
-        auditEventsToPersist.addAll(policyAuditEvents)
-        auditEventsToPersist.add(transitionAuditEvent)
-
-        val finalExecution = if (outgoingTransitions.isEmpty()) {
-            logger.info("Execution ${execution.id} reached terminal state $newState")
-            val completedExecution = updatedExecution.copy(status = ExecutionStatus.Completed)
-            
-            // Record completion audit event
-            val completionAuditEvent = AuditEvent(
-                id = "audit-${UUID.randomUUID()}",
-                executionId = execution.id.value,
-                timestamp = now,
-                eventType = AuditEventType.EXECUTION_COMPLETED,
-                fromState = newState,
-                toState = null,
-                policyId = null,
-                policyResult = null,
-                explanation = "Execution completed in state $newState",
-                actor = request.actor,
-                correlationId = request.correlationId
-            )
-            auditEventsToPersist.add(completionAuditEvent)
-            
-            completedExecution
-        } else {
-            updatedExecution
-        }
-        
-        // Save and return
-        executionRepository.updateWithAudit(finalExecution, auditEventsToPersist)
     }
     
     /**
@@ -246,5 +285,20 @@ class ExecutionEngine(
      */
     suspend fun listExecutions(limit: Int = 20, offset: Int = 0): List<Execution> {
         return executionRepository.findAll(limit, offset)
+    }
+
+    private suspend fun <T> withSpan(name: String, block: suspend () -> T): T {
+        val span = tracer.spanBuilder(name).startSpan()
+        val scope = span.makeCurrent()
+        return try {
+            block()
+        } catch (e: Exception) {
+            span.recordException(e)
+            span.setStatus(StatusCode.ERROR)
+            throw e
+        } finally {
+            scope.close()
+            span.end()
+        }
     }
 }

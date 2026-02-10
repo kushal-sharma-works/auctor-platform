@@ -4,6 +4,7 @@ import com.auctor.definition.domain.port.*;
 import com.auctor.definition.domain.service.PolicyEvaluator;
 import com.auctor.definition.domain.service.PolicyService;
 import com.auctor.definition.domain.service.WorkflowService;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -17,9 +18,10 @@ public class ServiceConfiguration {
     @Bean
     public WorkflowService workflowService(
         WorkflowCommandPort commandPort,
-        WorkflowQueryPort queryPort
+        WorkflowQueryPort queryPort,
+        MeterRegistry meterRegistry
     ) {
-        return new WorkflowService(commandPort, queryPort);
+        return new WorkflowService(commandPort, queryPort, meterRegistry);
     }
     
     @Bean
@@ -31,7 +33,7 @@ public class ServiceConfiguration {
     }
     
     @Bean
-    public PolicyEvaluator policyEvaluator() {
-        return new PolicyEvaluator();
+    public PolicyEvaluator policyEvaluator(MeterRegistry meterRegistry) {
+        return new PolicyEvaluator(meterRegistry);
     }
 }
