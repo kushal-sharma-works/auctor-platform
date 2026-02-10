@@ -26,6 +26,8 @@ import { Layout } from "../../components/Layout"
 import { Badge } from "../../components/UI"
 import { useExecutions } from "../../hooks/useExecution"
 import { StartExecutionModal } from "../../components/StartExecutionModal"
+import { useSelector } from "react-redux"
+import type { RootState } from "../../store"
 
 export default function ExecutionsPage() {
   const [page, setPage] = useState(0)
@@ -33,6 +35,8 @@ export default function ExecutionsPage() {
   const size = 10
   const { data, isLoading, error } = useExecutions(page, size)
   const executions = data?.items
+  const roles = useSelector((state: RootState) => state.session.roles)
+  const canExecute = roles.includes("EXECUTOR") || roles.includes("ADMIN")
 
   const formatDate = (dateString: string) => {
     try {
@@ -55,11 +59,12 @@ export default function ExecutionsPage() {
               Monitor and manage workflow executions in real-time.
             </Text>
           </VStack>
-          <Button colorScheme="purple" px={6} py={3} fontSize="lg" fontWeight="semibold" onClick={() => setIsStartModalOpen(true)} boxShadow="lg">
-            Start Execution
-          </Button>
+          {canExecute && (
+            <Button colorScheme="purple" px={6} py={3} fontSize="lg" fontWeight="semibold" onClick={() => setIsStartModalOpen(true)} boxShadow="lg">
+              Start Execution
+            </Button>
+          )}
         </Flex>
-
         {/* Table */}
         <Box
           borderRadius="3xl"
@@ -189,7 +194,9 @@ export default function ExecutionsPage() {
       </VStack>
 
       {/* Start Execution Modal */}
-      <StartExecutionModal isOpen={isStartModalOpen} onClose={() => setIsStartModalOpen(false)} />
+      {canExecute && (
+        <StartExecutionModal isOpen={isStartModalOpen} onClose={() => setIsStartModalOpen(false)} />
+      )}
     </Layout>
   )
 }

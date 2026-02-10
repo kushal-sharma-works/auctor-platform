@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { useDispatch } from "react-redux"
-import { setToken } from "../store/sessionSlice"
+import { setSession } from "../store/sessionSlice"
+import { buildSessionFromToken, storeSessionToken } from "../lib/auth-client"
 
 export function TokenSetter() {
   const [tokenInput, setTokenInput] = useState("")
@@ -10,7 +11,11 @@ export function TokenSetter() {
 
   const handleSetToken = () => {
     if (tokenInput.trim()) {
-      dispatch(setToken(tokenInput.trim()))
+      const session = buildSessionFromToken(tokenInput.trim())
+      if (session) {
+        storeSessionToken(session.token)
+        dispatch(setSession(session))
+      }
     }
   }
 

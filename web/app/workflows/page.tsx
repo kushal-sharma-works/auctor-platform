@@ -23,11 +23,15 @@ import {
 import { Layout } from "../../components/Layout"
 import { Badge } from "../../components/UI"
 import { useWorkflows } from "../../hooks/useGraphql"
+import { useSelector } from "react-redux"
+import type { RootState } from "../../store"
 
 export default function WorkflowsPage() {
   const [page, setPage] = useState(0)
   const size = 10
   const { data, isLoading, error } = useWorkflows(page, size)
+  const roles = useSelector((state: RootState) => state.session.roles)
+  const isAdmin = roles.includes("ADMIN")
 
   const workflows = data?.workflows
 
@@ -44,11 +48,13 @@ export default function WorkflowsPage() {
               Manage workflow definitions, versions, and lifecycle status.
             </Text>
           </VStack>
-          <Link href="/workflows/new">
-            <Button colorScheme="blue" px={6} py={3} fontSize="lg" fontWeight="semibold" boxShadow="lg">
-              Create Workflow
-            </Button>
-          </Link>
+          {isAdmin && (
+            <Link href="/workflows/new">
+              <Button colorScheme="blue" px={6} py={3} fontSize="lg" fontWeight="semibold" boxShadow="lg">
+                Create Workflow
+              </Button>
+            </Link>
+          )}
         </Flex>
 
         {/* Table */}

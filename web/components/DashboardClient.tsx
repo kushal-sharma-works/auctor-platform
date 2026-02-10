@@ -1,14 +1,23 @@
 "use client"
 
 import Link from "next/link"
+import { useEffect, useState } from "react"
 import { DefinitionCard } from "./DefinitionCard"
 import { usePolicies, useWorkflows } from "../hooks/useGraphql"
 import { Badge } from "./UI"
 import { Box, Grid, Heading, Text, Stack, SimpleGrid } from "@chakra-ui/react"
 
 export function DashboardClient() {
+  const [isHydrated, setIsHydrated] = useState(false)
+  useEffect(() => {
+    setIsHydrated(true)
+  }, [])
   const workflowsQuery = useWorkflows(0, 5)
   const policiesQuery = usePolicies(0, 5)
+
+  if (!isHydrated) {
+    return <Text fontSize="md" color="gray.500">Loading dashboard…</Text>
+  }
 
   if (workflowsQuery.isLoading || policiesQuery.isLoading) {
     return <Text fontSize="md" color="gray.500">Loading dashboard…</Text>

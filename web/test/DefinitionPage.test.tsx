@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react"
 import DefinitionsPage from "../app/page"
 import { Provider } from "react-redux"
 import { store } from "../store"
-import { setToken } from "../store/sessionSlice"
+import { setSession } from "../store/sessionSlice"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 jest.mock("../graphql/client", () => ({
@@ -18,7 +18,7 @@ jest.mock("../graphql/client", () => ({
 }))
 
 test("renders definition", async () => {
-  store.dispatch(setToken("Bearer test"))
+  store.dispatch(setSession({ token: "Bearer test", subject: "tester", roles: ["VIEWER"] }))
 
   render(
     <Provider store={store}>

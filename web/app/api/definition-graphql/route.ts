@@ -1,3 +1,17 @@
+const getAuthHeader = (request: Request): string | undefined => {
+  const direct = request.headers.get("authorization") || request.headers.get("Authorization")
+  if (direct) return direct
+  const cookie = request.headers.get("cookie") || ""
+  const match = cookie
+    .split(";")
+    .map((item) => item.trim())
+    .find((item) => item.startsWith("auctor.auth.token="))
+  if (!match) return undefined
+  const token = decodeURIComponent(match.split("=")[1] || "")
+  if (!token) return undefined
+  return token.startsWith("Bearer ") ? token : `Bearer ${token}`
+}
+
 export async function POST(request: Request): Promise<Response> {
   let body: string
   try {
@@ -16,10 +30,12 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
+    const authHeader = getAuthHeader(request)
     const upstreamResponse = await fetch("http://localhost:8081/graphql", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        ...(authHeader ? { Authorization: authHeader } : {})
       },
       body,
     })
@@ -54,7 +70,7 @@ export function OPTIONS(): Response {
     headers: {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type"
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
     }
   })
 }

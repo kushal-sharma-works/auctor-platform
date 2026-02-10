@@ -23,12 +23,16 @@ import {
 import { Layout } from "../../components/Layout"
 import { Badge } from "../../components/UI"
 import { usePolicies } from "../../hooks/useGraphql"
+import { useSelector } from "react-redux"
+import type { RootState } from "../../store"
 
 export default function PoliciesPage() {
   const [page, setPage] = useState(0)
   const size = 10
   const { data, isLoading, error } = usePolicies(page, size)
   const policies = data?.policies
+  const roles = useSelector((state: RootState) => state.session.roles)
+  const canAdmin = roles.includes("ADMIN")
 
   return (
     <Layout>
@@ -43,11 +47,13 @@ export default function PoliciesPage() {
               Define the conditions that drive approvals and enforcement.
             </Text>
           </VStack>
-          <Link href="/policies/new">
-            <Button colorScheme="green" px={6} py={3} fontSize="lg" fontWeight="semibold" boxShadow="lg">
-              Create Policy
-            </Button>
-          </Link>
+          {canAdmin && (
+            <Link href="/policies/new">
+              <Button colorScheme="green" px={6} py={3} fontSize="lg" fontWeight="semibold" boxShadow="lg">
+                Create Policy
+              </Button>
+            </Link>
+          )}
         </Flex>
 
         {/* Table */}

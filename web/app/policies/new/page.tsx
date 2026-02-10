@@ -21,6 +21,9 @@ import {
 import { Select } from "@chakra-ui/react/select"
 import { Layout } from "../../../components/Layout"
 import { useCreatePolicy } from "../../../hooks/useGraphql"
+import { Alert, AlertIcon } from "@chakra-ui/react"
+import { useSelector } from "react-redux"
+import type { RootState } from "../../../store"
 
 const conditionSchema = z.object({
   field: z.string().min(1, "Field is required"),
@@ -40,6 +43,8 @@ type PolicyFormData = z.infer<typeof policySchema>
 export default function NewPolicyPage() {
   const router = useRouter()
   const createPolicy = useCreatePolicy()
+  const roles = useSelector((state: RootState) => state.session.roles)
+  const canAdmin = roles.includes("ADMIN")
   const {
     register,
     control,
@@ -59,6 +64,7 @@ export default function NewPolicyPage() {
   })
 
   const onSubmit = async (data: PolicyFormData) => {
+    if (!canAdmin) return
     try {
       await createPolicy.mutateAsync({
         name: data.name,
@@ -88,6 +94,13 @@ export default function NewPolicyPage() {
           </VStack>
         </VStack>
 
+        {!canAdmin && (
+          <Alert status="warning" borderRadius="md">
+            <AlertIcon />
+            You need ADMIN access to create policies.
+          </Alert>
+        )}
+
         <Box
           as="form"
           onSubmit={handleSubmit(onSubmit)}
@@ -98,6 +111,8 @@ export default function NewPolicyPage() {
           p={6}
           boxShadow="sm"
           maxW="4xl"
+          opacity={canAdmin ? 1 : 0.5}
+          pointerEvents={canAdmin ? "auto" : "none"}
         >
           <VStack spacing={6}>
             {/* Policy Name */}

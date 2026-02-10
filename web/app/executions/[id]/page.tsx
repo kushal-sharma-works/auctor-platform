@@ -27,6 +27,8 @@ import {
 import { Layout } from "../../../components/Layout"
 import { Badge } from "../../../components/UI"
 import { useExecution, useExecutionAuditTrail, useAdvanceExecution } from "../../../hooks/useExecution"
+import { useSelector } from "react-redux"
+import type { RootState } from "../../../store"
 
 export default function ExecutionDetailPage() {
   const params = useParams()
@@ -37,6 +39,8 @@ export default function ExecutionDetailPage() {
   const { data: execution, isLoading, error } = useExecution(executionId)
   const { data: auditTrail, isLoading: auditLoading } = useExecutionAuditTrail(executionId)
   const advanceExecutionMutation = useAdvanceExecution()
+  const roles = useSelector((state: RootState) => state.session.roles)
+  const canExecute = roles.includes("EXECUTOR") || roles.includes("ADMIN")
 
   const handleAdvance = async () => {
     try {
@@ -227,7 +231,7 @@ export default function ExecutionDetailPage() {
                 </Flex>
               </VStack>
 
-              {isRunning && (
+              {isRunning && canExecute && (
                 <Button
                   colorScheme="blue"
                   onClick={handleAdvance}

@@ -21,13 +21,19 @@ export function Navigation() {
   const router = useRouter()
   const dispatch = useDispatch()
   const token = useSelector((state: RootState) => state.session.token)
+  const roles = useSelector((state: RootState) => state.session.roles)
   const [isHydrated, setIsHydrated] = useState(false)
 
   useEffect(() => {
     setIsHydrated(true)
   }, [])
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" })
+    } catch {
+      // Ignore logout errors and clear client state anyway.
+    }
     clearStoredToken()
     dispatch(clearToken())
     router.push("/login")
@@ -91,6 +97,15 @@ export function Navigation() {
         </Flex>
         {isHydrated && token && (
           <Flex align="center">
+            <Text
+              fontSize="sm"
+              fontWeight="semibold"
+              letterSpacing="0.06em"
+              color="blue.700"
+              mr={4}
+            >
+              ROLE: {roles.length ? roles.join(", ") : "UNKNOWN"}
+            </Text>
             <Button
               onClick={handleLogout}
               colorScheme="gray"
