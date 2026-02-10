@@ -4,9 +4,8 @@ import com.auctor.execution.cache.CacheService
 import com.auctor.execution.domain.ExecutionEngine
 import com.auctor.execution.domain.ExecutionRepository
 import com.auctor.execution.domain.AuditRepository
-import com.auctor.execution.grpc.DefinitionGrpcClient
 import com.auctor.execution.graphql.GraphQLProvider
-import io.ktor.http.ContentType
+import com.auctor.execution.observability.HealthService
 import io.ktor.http.HttpStatusCode
 import com.auctor.execution.security.toAuthContext
 import io.ktor.server.application.*
@@ -28,16 +27,19 @@ fun Route.installGraphQlRoutes(
     cacheService: CacheService?,
     executionEngine: ExecutionEngine,
     executionRepository: ExecutionRepository,
-    auditRepository: AuditRepository
+    auditRepository: AuditRepository,
+    healthService: HealthService
 ) {
     // Health check endpoint
     get("/health") {
-        call.respondText("OK", ContentType.Text.Plain, HttpStatusCode.OK)
+        call.respond(healthService.liveness())
     }
     
     // Readiness check endpoint
     get("/ready") {
-        call.respondText("READY", ContentType.Text.Plain, HttpStatusCode.OK)
+        val readiness = healthService.readiness()
+        val status = if (readiness["status"] == "UP") HttpStatusCode.OK else HttpStatusCode.ServiceUnavailable
+        call.respond(status, readiness)
     }
     
     // If cache service is not available, skip GraphQL setup

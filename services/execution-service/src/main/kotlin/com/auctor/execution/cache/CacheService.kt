@@ -1,6 +1,7 @@
 package com.auctor.execution.cache
 
 import com.auctor.execution.grpc.DefinitionGrpcClient
+import com.auctor.execution.observability.ExecutionMetrics
 import com.auctor.execution.grpc.WorkflowDto
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.benmanes.caffeine.cache.Caffeine
@@ -18,7 +19,8 @@ import java.time.Duration
  */
 class CacheService(
     private val grpcClient: DefinitionGrpcClient,
-    redisUrl: String = "redis://localhost:6379"
+    redisUrl: String = "redis://localhost:6379",
+    private val metrics: ExecutionMetrics = ExecutionMetrics.noop()
 ) : AutoCloseable {
 
     private val logger = LoggerFactory.getLogger(CacheService::class.java)
@@ -39,7 +41,10 @@ class CacheService(
         val cacheKey = "workflow:$id:$version"
         
         // 1) L1
-        l1Cache.getIfPresent(cacheKey)?.let { return it }
+        l1Cache.getIfPresent(cacheKey)?.let {
+            metrics.recordCacheHit()
+            return it
+        }
 
         // 2) L2 (Redis)
         val fromL2 = withContext(Dispatchers.IO) {
@@ -53,6 +58,7 @@ class CacheService(
         }
         if (fromL2 != null) {
             l1Cache.put(cacheKey, fromL2)
+            metrics.recordCacheHit()
             return fromL2
         }
 
@@ -69,10 +75,12 @@ class CacheService(
             
             // store in L1
             l1Cache.put(cacheKey, loaded)
-            
+
+            metrics.recordCacheMiss()
             return loaded
         }
 
+        metrics.recordCacheMiss()
         return null
     }
 

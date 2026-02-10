@@ -30,7 +30,12 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
+                .requestMatchers(
+                    "/actuator/health",
+                    "/actuator/health/**",
+                    "/actuator/info",
+                    "/actuator/prometheus"
+                ).permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/workflows/**", "/api/v1/policies/**")
                     .hasAnyRole("VIEWER", "ADMIN", "EXECUTOR")
                 .requestMatchers(HttpMethod.POST,

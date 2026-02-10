@@ -1,18 +1,24 @@
 package com.auctor.execution.grpc
 
 import com.auctor.definition.grpc.v1.*
+import com.auctor.execution.observability.ExecutionMetrics
+import io.grpc.ConnectivityState
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import io.grpc.stub.MetadataUtils
+import io.grpc.ClientInterceptors
+import io.opentelemetry.api.GlobalOpenTelemetry
+import io.opentelemetry.instrumentation.grpc.v1_6.GrpcTelemetry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.slf4j.LoggerFactory
 import java.time.Instant
+import java.time.Duration
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -35,6 +41,7 @@ class DefinitionGrpcClient : AutoCloseable {
     private val callDeadlineMs: Long
     private val blockingStub: DefinitionServiceGrpc.DefinitionServiceBlockingStub
     private val ownsChannel: Boolean
+    private val metrics: ExecutionMetrics
     
     // Circuit breaker state
     private val consecutiveFailures = AtomicInteger(0)
@@ -46,24 +53,32 @@ class DefinitionGrpcClient : AutoCloseable {
     constructor(
         targetHost: String = "localhost",
         targetPort: Int = 9090,
-        callDeadlineMs: Long = 2000L
+        callDeadlineMs: Long = 2000L,
+        metrics: ExecutionMetrics = ExecutionMetrics.noop()
     ) {
         this.callDeadlineMs = callDeadlineMs
+        this.metrics = metrics
         this.channel = ManagedChannelBuilder.forAddress(targetHost, targetPort)
             .usePlaintext()
             .build()
-        this.blockingStub = DefinitionServiceGrpc.newBlockingStub(channel)
+        val interceptor = GrpcTelemetry.create(GlobalOpenTelemetry.get()).newClientInterceptor()
+        val interceptedChannel = ClientInterceptors.intercept(channel, interceptor)
+        this.blockingStub = DefinitionServiceGrpc.newBlockingStub(interceptedChannel)
         this.ownsChannel = true
     }
 
     // Secondary constructor for testing with in-process channels
     constructor(
         channel: ManagedChannel,
-        callDeadlineMs: Long = 2000L
+        callDeadlineMs: Long = 2000L,
+        metrics: ExecutionMetrics = ExecutionMetrics.noop()
     ) {
         this.channel = channel
         this.callDeadlineMs = callDeadlineMs
-        this.blockingStub = DefinitionServiceGrpc.newBlockingStub(channel)
+        this.metrics = metrics
+        val interceptor = GrpcTelemetry.create(GlobalOpenTelemetry.get()).newClientInterceptor()
+        val interceptedChannel = ClientInterceptors.intercept(channel, interceptor)
+        this.blockingStub = DefinitionServiceGrpc.newBlockingStub(interceptedChannel)
         this.ownsChannel = false
     }
 
@@ -73,30 +88,32 @@ class DefinitionGrpcClient : AutoCloseable {
     suspend fun getWorkflow(id: String, version: Int, authHeader: String? = null): WorkflowDto? {
         return try {
             retryWithBackoff("getWorkflow") {
-                withContext(Dispatchers.IO) {
-                    val stub = attachAuthHeader(authHeader)
-                    withTimeout(callDeadlineMs + 200) {
-                        val request = GetWorkflowRequest.newBuilder()
-                            .setId(id)
-                            .setVersion(version)
-                            .build()
-                        val response = stub.withDeadlineAfter(callDeadlineMs, TimeUnit.MILLISECONDS)
-                            .getWorkflow(request)
-                        WorkflowDto(
-                            id = response.id,
-                            name = response.name,
-                            version = response.version,
-                            status = response.status,
-                            states = response.statesList,
-                            initialState = response.initialState,
-                            transitions = response.transitionsList.map {
-                                TransitionDto(
-                                    fromState = it.fromState,
-                                    toState = it.toState,
-                                    policyRef = it.policyRef.ifBlank { null }
-                                )
-                            }
-                        )
+                recordGrpcDuration("DefinitionService/GetWorkflow") {
+                    withContext(Dispatchers.IO) {
+                        val stub = attachAuthHeader(authHeader)
+                        withTimeout(callDeadlineMs + 200) {
+                            val request = GetWorkflowRequest.newBuilder()
+                                .setId(id)
+                                .setVersion(version)
+                                .build()
+                            val response = stub.withDeadlineAfter(callDeadlineMs, TimeUnit.MILLISECONDS)
+                                .getWorkflow(request)
+                            WorkflowDto(
+                                id = response.id,
+                                name = response.name,
+                                version = response.version,
+                                status = response.status,
+                                states = response.statesList,
+                                initialState = response.initialState,
+                                transitions = response.transitionsList.map {
+                                    TransitionDto(
+                                        fromState = it.fromState,
+                                        toState = it.toState,
+                                        policyRef = it.policyRef.ifBlank { null }
+                                    )
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -115,28 +132,30 @@ class DefinitionGrpcClient : AutoCloseable {
     suspend fun getPolicy(id: String, version: Int, authHeader: String? = null): PolicyDto? {
         return try {
             retryWithBackoff("getPolicy") {
-                withContext(Dispatchers.IO) {
-                    val stub = attachAuthHeader(authHeader)
-                    withTimeout(callDeadlineMs + 200) {
-                        val request = GetPolicyRequest.newBuilder()
-                            .setId(id)
-                            .setVersion(version)
-                            .build()
-                        val response = stub.withDeadlineAfter(callDeadlineMs, TimeUnit.MILLISECONDS)
-                            .getPolicy(request)
-                        PolicyDto(
-                            id = response.id,
-                            name = response.name,
-                            version = response.version,
-                            status = response.status,
-                            conditions = response.conditionsList.map {
-                                PolicyConditionDto(
-                                    field = it.field,
-                                    operator = it.operator,
-                                    value = it.value
-                                )
-                            }
-                        )
+                recordGrpcDuration("DefinitionService/GetPolicy") {
+                    withContext(Dispatchers.IO) {
+                        val stub = attachAuthHeader(authHeader)
+                        withTimeout(callDeadlineMs + 200) {
+                            val request = GetPolicyRequest.newBuilder()
+                                .setId(id)
+                                .setVersion(version)
+                                .build()
+                            val response = stub.withDeadlineAfter(callDeadlineMs, TimeUnit.MILLISECONDS)
+                                .getPolicy(request)
+                            PolicyDto(
+                                id = response.id,
+                                name = response.name,
+                                version = response.version,
+                                status = response.status,
+                                conditions = response.conditionsList.map {
+                                    PolicyConditionDto(
+                                        field = it.field,
+                                        operator = it.operator,
+                                        value = it.value
+                                    )
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -159,23 +178,29 @@ class DefinitionGrpcClient : AutoCloseable {
         authHeader: String? = null
     ): PolicyEvaluationResultDto {
         return retryWithBackoff("evaluatePolicy") {
-            withContext(Dispatchers.IO) {
-                val stub = attachAuthHeader(authHeader)
-                withTimeout(callDeadlineMs + 200) {
-                    val request = EvaluatePolicyRequest.newBuilder()
-                        .setPolicyId(policyId)
-                        .setPolicyVersion(version)
-                        .putAllContext(context)
-                        .build()
-                    val response = stub.withDeadlineAfter(callDeadlineMs, TimeUnit.MILLISECONDS)
-                        .evaluatePolicy(request)
-                    PolicyEvaluationResultDto(
-                        allowed = response.allowed,
-                        explanation = response.explanation
-                    )
+            recordGrpcDuration("DefinitionService/EvaluatePolicy") {
+                withContext(Dispatchers.IO) {
+                    val stub = attachAuthHeader(authHeader)
+                    withTimeout(callDeadlineMs + 200) {
+                        val request = EvaluatePolicyRequest.newBuilder()
+                            .setPolicyId(policyId)
+                            .setPolicyVersion(version)
+                            .putAllContext(context)
+                            .build()
+                        val response = stub.withDeadlineAfter(callDeadlineMs, TimeUnit.MILLISECONDS)
+                            .evaluatePolicy(request)
+                        PolicyEvaluationResultDto(
+                            allowed = response.allowed,
+                            explanation = response.explanation
+                        )
+                    }
                 }
             }
         }
+    }
+
+    fun isChannelReady(): Boolean {
+        return channel.getState(true) == ConnectivityState.READY
     }
 
     /**
@@ -225,6 +250,24 @@ class DefinitionGrpcClient : AutoCloseable {
         recordFailure()
         logger.error("$operation failed after $maxAttempts attempts", lastException)
         throw lastException ?: IllegalStateException("$operation failed")
+    }
+
+    private suspend fun <T> recordGrpcDuration(
+        method: String,
+        block: suspend () -> T
+    ): T {
+        val start = System.nanoTime()
+        return try {
+            val result = block()
+            metrics.recordGrpcClientDuration(method, "OK", Duration.ofNanos(System.nanoTime() - start))
+            result
+        } catch (e: StatusRuntimeException) {
+            metrics.recordGrpcClientDuration(method, e.status.code.name, Duration.ofNanos(System.nanoTime() - start))
+            throw e
+        } catch (e: Exception) {
+            metrics.recordGrpcClientDuration(method, "ERROR", Duration.ofNanos(System.nanoTime() - start))
+            throw e
+        }
     }
 
     /**

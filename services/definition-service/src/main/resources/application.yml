@@ -59,6 +59,9 @@ management:
       show-details: always
       probes:
         enabled: true
+      group:
+        readiness:
+          include: db
   metrics:
     tags:
       service: definition-service
@@ -79,7 +82,7 @@ otel:
   sdk:
     disabled: false
   traces:
-    exporter: logging
+    exporter: otlp
   logs:
     exporter: none
   metrics:
@@ -87,3 +90,6 @@ otel:
   resource:
     attributes:
       service.name: definition-service
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
