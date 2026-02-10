@@ -8,6 +8,9 @@ import { ChakraProvider } from "@chakra-ui/react"
 import { setSession } from "../store/sessionSlice"
 import { buildSessionFromToken, getStoredSession, needsRefresh, storeSessionToken } from "../lib/auth-client"
 import type { RootState } from "../store"
+import { initTracing } from "../src/observability/tracing"
+import { reportWebVitals } from "../src/observability/webVitals"
+import { ErrorBoundary } from "./ErrorBoundary"
 
 function SessionHydrator() {
   const dispatch = useDispatch()
@@ -89,13 +92,18 @@ export function Providers({ children }: { children: ReactNode }) {
     []
   )
 
+  useEffect(() => {
+    initTracing()
+    reportWebVitals()
+  }, [])
+
   return (
     <ReduxProvider store={store}>
       <ChakraProvider>
         <QueryClientProvider client={queryClient}>
           <SessionHydrator />
           <SessionRefresher />
-          {children}
+          <ErrorBoundary>{children}</ErrorBoundary>
         </QueryClientProvider>
       </ChakraProvider>
     </ReduxProvider>
