@@ -1,0 +1,48 @@
+name: CI - Execution Service
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'services/execution-service/**'
+      - '.github/workflows/ci-execution-service.yml'
+  pull_request:
+    paths:
+      - 'services/execution-service/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+      - name: Build & Test
+        working-directory: services/execution-service
+        run: ./gradlew build --no-daemon
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-execution
+          path: services/execution-service/build/test-results/test/
+
+  docker:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+      - name: Build distribution
+        working-directory: services/execution-service
+        run: ./gradlew clean installDist -x test --no-daemon
+      - name: Build Docker image
+        working-directory: services/execution-service
+        run: docker build -t auctor/execution-service:${{ github.sha }} .

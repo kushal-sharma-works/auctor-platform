@@ -1,0 +1,14 @@
+location               = "eastus"
+environment            = "sit"
+name_prefix            = "auctor"
+aks_dns_prefix         = "auctor"
+node_count             = 2
+vm_size                = "Standard_DS2_v2"
+
+postgres_admin_username = "auctor_admin"
+postgres_admin_password = "change-me"
+
+acr_sku      = "Basic"
+redis_sku    = "Basic"
+redis_family = "C"
+redis_capacity = 1

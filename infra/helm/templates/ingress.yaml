@@ -1,40 +1,45 @@
+{{- if .Values.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: auctor-ingress
+  name: {{ include "auctor.fullname" . }}-ingress
+  labels:
+    {{- include "auctor.labels" (dict "context" . "name" "ingress") | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
-    nginx.ingress.kubernetes.io/enable-cors: "true"
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
-  ingressClassName: nginx
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- if .Values.ingress.tls.enabled }}
   tls:
     - hosts:
-        - "{{ .Values.ingress.host }}"
-      secretName: auctor-tls
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
   rules:
-    - host: "{{ .Values.ingress.host }}"
+    - host: {{ .Values.ingress.host | quote }}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: web
+                name: {{ include "auctor.serviceName" (dict "context" . "name" "web") }}
                 port:
-                  number: 3000
+                  number: {{ .Values.services.web.httpPort }}
           - path: /api
             pathType: Prefix
             backend:
               service:
-                name: definition-service
+                name: {{ include "auctor.serviceName" (dict "context" . "name" "definition-service") }}
                 port:
-                  number: 8081
+                  number: {{ .Values.services.definition.httpPort }}
           - path: /graphql
             pathType: Prefix
             backend:
               service:
-                name: execution-service
+                name: {{ include "auctor.serviceName" (dict "context" . "name" "execution-service") }}
                 port:
-                  number: 8082
+                  number: {{ .Values.services.execution.httpPort }}
+{{- end }}
