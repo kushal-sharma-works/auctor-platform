@@ -9,3 +9,6 @@ build
 
 # Ignore build artifacts
 META-INF
+
+# Ignore generated bin outputs
+bin/
