@@ -14,10 +14,34 @@ spec:
       labels:
         {{- include "auctor.selectorLabels" (dict "context" . "name" "definition-service") | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "auctor.serviceName" (dict "context" . "name" "definition-service") }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    {{- include "auctor.selectorLabels" (dict "context" . "name" "definition-service") | nindent 20 }}
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: definition-service
           image: "{{ .Values.image.registry }}/definition-service:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1000
           ports:
             - containerPort: {{ .Values.services.definition.httpPort }}
               name: http

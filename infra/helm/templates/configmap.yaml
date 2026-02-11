@@ -12,7 +12,7 @@ data:
   SPRING_DATASOURCE_USERNAME: "{{ .Values.config.definition.datasourceUser }}"
   EXECUTION_DB_URL: "{{ .Values.config.execution.dbUrl }}"
   EXECUTION_DB_USER: "{{ .Values.config.execution.dbUser }}"
-  EXECUTION_GRPC_HOST: "{{ include \"auctor.serviceName\" (dict \"context\" . \"name\" \"definition-service\") }}"
+  EXECUTION_GRPC_HOST: "{{ include "auctor.serviceName" (dict "context" . "name" "definition-service") }}"
   EXECUTION_GRPC_PORT: "{{ .Values.services.definition.grpcPort }}"
   EXECUTION_REDIS_URL: "{{ .Values.config.execution.redisUrl }}"
   NEXT_PUBLIC_OTEL_EXPORTER_ENDPOINT: "{{ .Values.config.web.otelExporterEndpoint }}"

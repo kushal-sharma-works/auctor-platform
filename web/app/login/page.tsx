@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useDispatch } from "react-redux"
 import {
@@ -14,6 +14,8 @@ import {
   Divider,
   Alert,
   AlertIcon,
+  Spinner,
+  Center,
 } from "@chakra-ui/react"
 import { setSession } from "../../store/sessionSlice"
 import { buildSessionFromToken, getStoredSession, storeSessionToken } from "../../lib/auth-client"
@@ -28,7 +30,7 @@ const loadGoogleScript = () => {
   document.body.appendChild(script)
 }
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const dispatch = useDispatch()
@@ -217,6 +219,20 @@ export default function LoginPage() {
         </VStack>
       </Box>
     </Box>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <Box minH="100vh" bg="gray.50" display="flex" alignItems="center" justifyContent="center">
+        <Center>
+          <Spinner size="xl" color="blue.500" />
+        </Center>
+      </Box>
+    }>
+      <LoginPageContent />
+    </Suspense>
   )
 }
 

@@ -41,8 +41,8 @@ export default function ExecutionsPage() {
       (workflowData?.workflows?.content || []).map((workflow) => [workflow.id, workflow.name])
     )
 
-    const formatWorkflowName = (workflowId: string) =>
-      workflowNameById.get(workflowId) || workflowId
+    const formatWorkflowName = (workflowId: string): string =>
+      (workflowNameById.get(workflowId) as string) || workflowId
   const roles = useSelector((state: RootState) => state.session.roles)
   const canExecute = roles.includes("EXECUTOR") || roles.includes("ADMIN")
 

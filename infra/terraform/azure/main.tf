@@ -32,8 +32,10 @@ locals {
   pg_name    = "${local.env_prefix}-pg"
   redis_name = "${local.env_prefix}-redis"
 
-  acr_name = lower(regexreplace("${var.name_prefix}${var.environment}${random_string.suffix.result}", "[^a-zA-Z0-9]", ""))
-  kv_name  = substr(lower(regexreplace("${var.name_prefix}-${var.environment}-${random_string.suffix.result}", "[^a-zA-Z0-9-]", "")), 0, 24)
+  # Simple name generation: ACR names must be lowercase alphanumeric only
+  acr_name = lower(replace(replace("${var.name_prefix}${var.environment}${random_string.suffix.result}", "-", ""), "_", ""))
+  # Key Vault names must be lowercase alphanumeric and hyphens, max 24 chars
+  kv_name = substr(lower(replace("${var.name_prefix}-${var.environment}-${random_string.suffix.result}", "_", "")), 0, 24)
 }
 
 resource "azurerm_resource_group" "rg" {
@@ -67,6 +69,14 @@ resource "azurerm_container_registry" "acr" {
   admin_enabled       = false
 }
 
+# Grant AKS permission to pull images from ACR
+resource "azurerm_role_assignment" "aks_acr_pull" {
+  principal_id                     = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
+  role_definition_name             = "AcrPull"
+  scope                            = azurerm_container_registry.acr.id
+  skip_service_principal_aad_check = true
+}
+
 resource "azurerm_postgresql_flexible_server" "postgres" {
   name                   = local.pg_name
   resource_group_name    = azurerm_resource_group.rg.name
@@ -78,7 +88,15 @@ resource "azurerm_postgresql_flexible_server" "postgres" {
   sku_name               = var.postgres_sku
   backup_retention_days  = var.postgres_backup_retention_days
   zone                   = var.postgres_zone
-  public_network_access_enabled = true
+
+  # Security: Disable public access for production
+  public_network_access_enabled = false
+
+  # High availability configuration
+  high_availability {
+    mode                      = "ZoneRedundant"
+    standby_availability_zone = var.postgres_standby_zone
+  }
 }
 
 resource "azurerm_postgresql_flexible_server_database" "definition" {

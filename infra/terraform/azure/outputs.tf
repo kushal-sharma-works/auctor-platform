@@ -11,12 +11,12 @@ output "acr_login_server" {
 
 output "postgres_definition_connection_string" {
   description = "Connection string for the definition database."
-  value = "postgresql://${azurerm_postgresql_flexible_server.postgres.administrator_login}:${var.postgres_admin_password}@${azurerm_postgresql_flexible_server.postgres.fqdn}:5432/definition?sslmode=require"
-  sensitive = true
+  value       = "postgresql://${azurerm_postgresql_flexible_server.postgres.administrator_login}:${var.postgres_admin_password}@${azurerm_postgresql_flexible_server.postgres.fqdn}:5432/definition?sslmode=require"
+  sensitive   = true
 }
 
 output "postgres_execution_connection_string" {
   description = "Connection string for the execution database."
-  value = "postgresql://${azurerm_postgresql_flexible_server.postgres.administrator_login}:${var.postgres_admin_password}@${azurerm_postgresql_flexible_server.postgres.fqdn}:5432/execution?sslmode=require"
-  sensitive = true
+  value       = "postgresql://${azurerm_postgresql_flexible_server.postgres.administrator_login}:${var.postgres_admin_password}@${azurerm_postgresql_flexible_server.postgres.fqdn}:5432/execution?sslmode=require"
+  sensitive   = true
 }

@@ -45,10 +45,20 @@ ingress:
     secretName: ""
 
 hpa:
+  definition:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 70
   execution:
     enabled: true
     minReplicas: 1
     maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+  web:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
     targetCPUUtilizationPercentage: 70
 
 resources:

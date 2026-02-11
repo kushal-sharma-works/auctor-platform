@@ -54,6 +54,28 @@ cd web
 npm test
 ```
 
+## 🧪 Pre-Deployment Testing
+
+Before deploying to SIT, validate everything works:
+
+### Quick Check (30 seconds)
+```bash
+./scripts/quick-check.sh
+```
+
+### Full Validation (5-10 minutes)
+```bash
+./scripts/validate-all.sh
+```
+
+### Local Full Stack Test
+```bash
+# Starts all services and runs smoke tests
+./scripts/test-local.sh
+```
+
+**📖 Detailed Guide**: See [Pre-Deployment Validation](docs/pre-deployment-validation.md)
+
 ## Deploy to Kubernetes (SIT)
 1) Provision Azure infrastructure:
 ```bash
@@ -101,6 +123,37 @@ kubectl apply -n argocd -f infra/argocd/application-sit.yaml
 - ADRs: [docs/decisions.md](docs/decisions.md)
 - Tradeoffs: [docs/tradeoffs.md](docs/tradeoffs.md)
 - Operations: [docs/operations.md](docs/operations.md)
+- **Production Readiness**: [docs/production-readiness.md](docs/production-readiness.md)
+- **Deployment Guide**: [docs/deployment-guide.md](docs/deployment-guide.md)
+- **Disaster Recovery**: [docs/disaster-recovery.md](docs/disaster-recovery.md)
+
+## Production Enhancements ✨
+
+### Security
+- ✅ Pod Security Contexts (runAsNonRoot, drop ALL capabilities)
+- ✅ RBAC with dedicated Service Accounts
+- ✅ Network Policies for service isolation
+- ✅ Vulnerability scanning (Trivy, OWASP, TruffleHog)
+- ✅ PostgreSQL with private endpoint and Zone Redundant HA
+
+### Observability
+- ✅ OpenTelemetry tracing with Jaeger
+- ✅ Prometheus metrics + custom business metrics
+- ✅ Structured JSON logging with correlation IDs
+- ✅ Pre-configured Grafana dashboards
+- ✅ Prometheus alerting rules
+
+### High Availability
+- ✅ HPA for all services (CPU-based scaling)
+- ✅ Pod Disruption Budgets
+- ✅ Anti-affinity rules for fault tolerance
+- ✅ 30-day backup retention for PostgreSQL
+
+### DevOps
+- ✅ Helm charts with environment-specific values
+- ✅ GitOps-ready (ArgoCD configurations)
+- ✅ Terraform for Azure (AKS, ACR, PostgreSQL, Redis, Key Vault)
+- ✅ CI/CD with automated security scanning
 
 ## Deliberately Not Included
 - BPMN engine: focused on deterministic policy workflows.

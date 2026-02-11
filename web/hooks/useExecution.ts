@@ -36,8 +36,8 @@ export function useExecution(executionId: string) {
     queryKey: ['execution', executionId, token],
     queryFn: () => getExecution(executionId, token || undefined),
     enabled: Boolean(executionId) && Boolean(token),
-    refetchInterval: (data) =>
-      data?.status?.type?.toLowerCase() === 'running' ? 2000 : false,
+    refetchInterval: (query) =>
+      (query.state.data as any)?.status?.type?.toLowerCase() === 'running' ? 2000 : false,
   })
 }
 

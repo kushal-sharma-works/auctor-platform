@@ -36,6 +36,7 @@ export default function WorkflowsPage() {
   const workflows = data?.workflows
 
   return (
+    <>
     <Layout>
       <VStack align="stretch" spacing={8}>
         {/* Header */}
@@ -183,5 +184,6 @@ export default function WorkflowsPage() {
         </Flex>
       </VStack>
     </Layout>
+    </>
   )
 }

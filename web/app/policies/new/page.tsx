@@ -31,9 +31,7 @@ const isNumeric = (value: string) => /^-?\d+(\.\d+)?$/.test(value.trim())
 
 const conditionSchema = z.object({
   field: z.string().min(1, "Field is required"),
-  operator: z.enum(["EQ", "NEQ", "GT", "LT", "GTE", "LTE", "IN", "NOT_IN"], {
-    required_error: "Operator is required",
-  }),
+  operator: z.enum(["EQ", "NEQ", "GT", "LT", "GTE", "LTE", "IN", "NOT_IN"]),
   value: z.string().min(1, "Value is required"),
 }).superRefine((condition, ctx) => {
   if (numericOperators.has(condition.operator) && !isNumeric(condition.value)) {

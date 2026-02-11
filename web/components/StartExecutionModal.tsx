@@ -19,7 +19,7 @@ import {
   Box,
   HStack,
 } from "@chakra-ui/react"
-import type { Workflow } from "../graphql/generated/types"
+import type { Workflow } from "../graphql/types"
 import { useWorkflows } from "../hooks/useGraphql"
 import { useStartExecution } from "../hooks/useExecution"
 
@@ -163,7 +163,7 @@ export function StartExecutionModal({ isOpen, onClose }: StartExecutionModalProp
                 borderLeftColor="blue.500"
               >
                 <Text fontSize="xs" color="slate.600" fontWeight="medium">
-                  Version: {selectedVersion} | Status: {selectedWorkflowObj.status}
+                  Version: {selectedVersion}
                 </Text>
               </Box>
             )}

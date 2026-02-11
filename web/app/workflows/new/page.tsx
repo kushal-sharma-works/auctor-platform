@@ -97,6 +97,7 @@ export default function NewWorkflowPage() {
   }
 
   return (
+    <>
     <Layout>
       <VStack align="stretch" spacing={8}>
         <VStack align="start" spacing={2}>
@@ -227,6 +228,7 @@ export default function NewWorkflowPage() {
                   Enter states first to add transitions
                 </Alert>
               ) : (
+                <>
                 <Text fontSize="xs" color="gray.500" mb={2}>
                   Use the policy ID (not the name) when linking a policy.
                 </Text>
@@ -289,6 +291,7 @@ export default function NewWorkflowPage() {
                     </HStack>
                   ))}
                 </VStack>
+                </>
               )}
             </FormControl>
 
@@ -320,5 +323,6 @@ export default function NewWorkflowPage() {
         </Box>
       </VStack>
     </Layout>
+    </>
   )
 }

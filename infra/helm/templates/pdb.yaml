@@ -1,0 +1,35 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "auctor.serviceName" (dict "context" . "name" "definition-service") }}
+  labels:
+    {{- include "auctor.labels" (dict "context" . "name" "definition-service") | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "auctor.selectorLabels" (dict "context" . "name" "definition-service") | nindent 6 }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "auctor.serviceName" (dict "context" . "name" "execution-service") }}
+  labels:
+    {{- include "auctor.labels" (dict "context" . "name" "execution-service") | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "auctor.selectorLabels" (dict "context" . "name" "execution-service") | nindent 6 }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "auctor.serviceName" (dict "context" . "name" "web") }}
+  labels:
+    {{- include "auctor.labels" (dict "context" . "name" "web") | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "auctor.selectorLabels" (dict "context" . "name" "web") | nindent 6 }}

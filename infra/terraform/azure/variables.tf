@@ -67,13 +67,19 @@ variable "postgres_storage_mb" {
 variable "postgres_backup_retention_days" {
   description = "PostgreSQL backup retention in days."
   type        = number
-  default     = 7
+  default     = 30
 }
 
 variable "postgres_zone" {
   description = "PostgreSQL availability zone."
   type        = string
   default     = "1"
+}
+
+variable "postgres_standby_zone" {
+  description = "PostgreSQL standby zone for HA."
+  type        = string
+  default     = "2"
 }
 
 variable "postgres_admin_username" {

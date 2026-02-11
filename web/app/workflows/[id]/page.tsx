@@ -61,6 +61,7 @@ export default function WorkflowDetailPage() {
   }
 
   return (
+    <>
     <Layout>
       <Flex direction="row" align="flex-start" justify="space-between" mb={8}>
         <VStack align="flex-start" spacing={2}>
@@ -260,5 +261,6 @@ export default function WorkflowDetailPage() {
         </Grid>
       )}
     </Layout>
+    </>
   )
 }

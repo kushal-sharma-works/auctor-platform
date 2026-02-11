@@ -85,6 +85,7 @@ dependencies {
     // Micrometer
     implementation("io.micrometer:micrometer-core:1.13.0")
     implementation("io.micrometer:micrometer-registry-prometheus:1.13.0")
+    implementation("io.ktor:ktor-server-metrics-micrometer-jvm:3.0.0")
 
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
