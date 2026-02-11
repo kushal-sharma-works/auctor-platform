@@ -91,7 +91,9 @@ dependencies {
     testImplementation("io.ktor:ktor-server-test-host-jvm:3.0.0")
     testImplementation("io.grpc:grpc-inprocess:1.63.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+    testImplementation("org.mockito:mockito-core:5.8.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    testImplementation("com.h2database:h2:2.2.224")
 
 }
 
@@ -103,6 +105,18 @@ tasks.withType<Jar> {
 
 tasks.test {
     useJUnitPlatform()
+    // Exclude integration tests (*IT.kt) from default test task
+    exclude("**/*IT.class")
+}
+
+// Run integration tests separately: ./gradlew integrationTest
+tasks.register<Test>("integrationTest") {
+    useJUnitPlatform()
+    // Include only integration tests (*IT.class files)
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    include("**/*IT.class")
+    shouldRunAfter("test")
 }
 
 protobuf {

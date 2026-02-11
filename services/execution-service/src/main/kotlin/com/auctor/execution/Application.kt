@@ -30,8 +30,9 @@ import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics
-import io.micrometer.prometheus.PrometheusConfig
-import io.micrometer.prometheus.PrometheusMeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+// import io.micrometer.prometheus.PrometheusConfig
+// import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.serialization.json.Json
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.sql.Database
@@ -95,7 +96,7 @@ fun Application.module(
     install(CorrelationIdPlugin)
 
     // Metrics registry and standard JVM binders
-    val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    val meterRegistry = SimpleMeterRegistry() // PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
     ClassLoaderMetrics().bindTo(meterRegistry)
     JvmMemoryMetrics().bindTo(meterRegistry)
     JvmGcMetrics().bindTo(meterRegistry)

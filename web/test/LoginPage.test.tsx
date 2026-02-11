@@ -2,13 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import LoginPage from "../app/login/page"
 import { Provider } from "react-redux"
 import { store } from "../store"
-
-const pushMock = jest.fn()
-
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: pushMock }),
-  useSearchParams: () => new URLSearchParams(),
-}))
+import { useRouter } from "next/navigation"
 
 const buildToken = (payload: Record<string, unknown>) => {
   const header = { alg: "HS256", typ: "JWT" }
@@ -22,10 +16,18 @@ const buildToken = (payload: Record<string, unknown>) => {
 }
 
 describe("LoginPage", () => {
+  const pushMock = jest.fn()
+
   beforeEach(() => {
     pushMock.mockClear()
+    ;(useRouter as jest.Mock).mockReturnValue({
+      push: pushMock,
+      replace: jest.fn(),
+      prefetch: jest.fn(),
+      back: jest.fn(),
+    })
     process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN = "true"
-    ;(global as any).fetch = jest.fn().mockResolvedValue({
+    ;(global.fetch as jest.Mock) = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         token: buildToken({ sub: "user", roles: ["VIEWER", "EXECUTOR"], exp: 9999999999 }),
@@ -50,7 +52,7 @@ describe("LoginPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign in (Dev)" }))
 
     await waitFor(() => {
-      expect((global as any).fetch).toHaveBeenCalledWith(
+      expect(global.fetch).toHaveBeenCalledWith(
         "/api/auth/token",
         expect.objectContaining({ method: "POST" })
       )

@@ -24,7 +24,7 @@ class CorrelationIdPluginTest {
         }
 
         val response = client.get("/health") {
-            header("X-Correlation-ID", "corr-123")
+            headers.append("X-Correlation-ID", "corr-123")
         }
 
         assertEquals(HttpStatusCode.OK, response.status)

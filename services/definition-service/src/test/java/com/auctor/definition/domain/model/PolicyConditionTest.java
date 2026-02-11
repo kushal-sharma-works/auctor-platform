@@ -82,7 +82,7 @@ class PolicyConditionTest {
     @Test
     void shouldHandleAllOperators() {
         for (Operator operator : Operator.values()) {
-            PolicyCondition condition = new PolicyCondition("field", operator, "value");
+            PolicyCondition condition = new PolicyCondition("field", operator, valueForOperator(operator));
             assertEquals(operator, condition.operator());
         }
     }
@@ -211,5 +211,13 @@ class PolicyConditionTest {
         
         // Then
         assertEquals("-100", condition.value());
+    }
+    
+    private String valueForOperator(Operator operator) {
+        return switch (operator) {
+            case GT, LT, GTE, LTE -> "10";
+            case IN, NOT_IN -> "A,B";
+            default -> "value";
+        };
     }
 }

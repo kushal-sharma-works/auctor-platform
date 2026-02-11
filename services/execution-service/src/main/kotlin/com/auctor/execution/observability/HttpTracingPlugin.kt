@@ -20,7 +20,7 @@ val HttpTracingPlugin = createApplicationPlugin("HttpTracingPlugin") {
 
     onCall { call ->
         val parentContext = propagator.extract(Context.current(), call, HeaderGetter)
-        val span = tracer.spanBuilder("${call.request.httpMethod.value} ${call.request.path()}")
+        val span = tracer.spanBuilder("${call.request.local.method.value} ${call.request.local.uri}")
             .setParent(parentContext)
             .setSpanKind(SpanKind.SERVER)
             .startSpan()
