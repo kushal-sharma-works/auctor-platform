@@ -22,9 +22,12 @@ exporters:
     tls:
       insecure: true
   prometheus:
-    endpoint: "0.0.0.0:8888"
+    endpoint: "0.0.0.0:8889"
 
 service:
+  telemetry:
+    metrics:
+      address: "0.0.0.0:8888"
   pipelines:
     traces:
       receivers: [otlp]

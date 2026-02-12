@@ -94,7 +94,8 @@ services:
     ports:
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP
-      - "8888:8888"   # Prometheus metrics
+      - "8888:8888"   # Collector internal metrics
+      - "8889:8889"   # Prometheus metrics exporter
     volumes:
       - ./infra/monitoring/otel-collector-config.yaml:/etc/otel/config.yaml
     command: ["--config=/etc/otel/config.yaml"]
