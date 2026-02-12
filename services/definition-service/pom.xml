@@ -162,6 +162,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- H2 Database for tests without Testcontainers -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Mockito (explicit version for Java 21 compatibility) -->
         <dependency>
             <groupId>org.mockito</groupId>
