@@ -80,6 +80,8 @@ services:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_OTEL_EXPORTER_ENDPOINT=http://otel-collector:4318/v1/traces
+      - DEFINITION_SERVICE_URL=http://definition-service:8081
+      - EXECUTION_SERVICE_URL=http://execution-service:8082
     depends_on:
       execution-service:
         condition: service_healthy

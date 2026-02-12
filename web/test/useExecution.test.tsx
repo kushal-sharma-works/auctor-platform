@@ -152,12 +152,12 @@ describe("useExecution hooks", () => {
 
       await result.current.mutateAsync({
         executionId: "exec-1",
-        request: { nextState: "COMPLETE" },
+        request: { correlationId: "corr-1" },
       })
 
       expect(executionApi.advanceExecution).toHaveBeenCalledWith(
         "exec-1",
-        { nextState: "COMPLETE" },
+        { correlationId: "corr-1" },
         "test-token"
       )
     })

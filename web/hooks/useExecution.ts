@@ -23,6 +23,8 @@ export function useExecutions(page: number, size: number) {
     queryKey: ['executions', page, size, token],
     queryFn: () => listExecutions(size, page * size, token || undefined),
     enabled: Boolean(token),
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   })
 }
 
@@ -38,6 +40,8 @@ export function useExecution(executionId: string) {
     enabled: Boolean(executionId) && Boolean(token),
     refetchInterval: (query) =>
       (query.state.data as any)?.status?.type?.toLowerCase() === 'running' ? 2000 : false,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   })
 }
 
@@ -51,6 +55,8 @@ export function useExecutionAuditTrail(executionId: string) {
     queryKey: ['executionAuditTrail', executionId, token],
     queryFn: () => getAuditTrail(executionId, token || undefined),
     enabled: Boolean(executionId) && Boolean(token),
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   })
 }
 
@@ -78,6 +84,9 @@ export function useAdvanceExecution() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['execution', variables.executionId, token] })
       queryClient.invalidateQueries({ queryKey: ['executionAuditTrail', variables.executionId, token] })
+      queryClient.invalidateQueries({ queryKey: ['executions'] })
+    },
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: ['executions'] })
     },
   })

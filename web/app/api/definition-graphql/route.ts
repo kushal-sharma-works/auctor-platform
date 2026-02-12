@@ -31,7 +31,8 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const authHeader = getAuthHeader(request)
-    const upstreamResponse = await fetch("http://localhost:8081/graphql", {
+    const definitionUrl = process.env.DEFINITION_SERVICE_URL || "http://localhost:8081"
+    const upstreamResponse = await fetch(`${definitionUrl}/graphql`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
