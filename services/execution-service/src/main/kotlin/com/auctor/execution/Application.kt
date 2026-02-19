@@ -2,6 +2,7 @@ package com.auctor.execution
 
 import com.auctor.execution.cache.CacheService
 import com.auctor.execution.domain.ExecutionEngine
+import com.auctor.execution.domain.ExecutionNotFoundException
 import com.auctor.execution.grpc.DefinitionGrpcClient
 import com.auctor.execution.http.installGraphQlRoutes
 import com.auctor.execution.infra.db.ExposedAuditRepository
@@ -72,6 +73,27 @@ fun Application.module(
 
     // Status pages for error handling
     install(StatusPages) {
+        exception<ExecutionNotFoundException> { call, cause ->
+            call.respond(
+                HttpStatusCode.NotFound,
+                mapOf("error" to "NOT_FOUND", "message" to (cause.message ?: "Resource not found"))
+            )
+        }
+
+        exception<IllegalArgumentException> { call, cause ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                mapOf("error" to "BAD_REQUEST", "message" to (cause.message ?: "Invalid request"))
+            )
+        }
+
+        exception<IllegalStateException> { call, cause ->
+            call.respond(
+                HttpStatusCode.Conflict,
+                mapOf("error" to "CONFLICT", "message" to (cause.message ?: "Invalid state transition"))
+            )
+        }
+
         exception<Throwable> { call, cause ->
             if (cause is kotlinx.coroutines.CancellationException) {
                 throw cause

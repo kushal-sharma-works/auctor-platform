@@ -17,8 +17,10 @@ import graphql.schema.DataFetcher
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.future.future
 import org.slf4j.LoggerFactory
 import java.util.UUID
@@ -35,12 +37,13 @@ class GraphQLProvider(
     private val executionEngine: ExecutionEngine,
     private val executionRepository: ExecutionRepository,
     private val auditRepository: AuditRepository,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 ) {
 
     private val graphQL: GraphQL = build()
 
     private class AuthzException(message: String) : RuntimeException(message)
+    private class GraphQlClientException(message: String) : RuntimeException(message)
 
     private fun requireRole(authContext: AuthContext?, requiredRole: String) {
         if (authContext == null) {
@@ -60,6 +63,33 @@ class GraphQLProvider(
     private fun authContextFromEnv(env: graphql.schema.DataFetchingEnvironment): AuthContext? {
         val context = env.getContext<Map<String, Any>?>()
         return context?.get("authContext") as? AuthContext
+    }
+
+    private fun resolveActor(authContext: AuthContext?): String {
+        val email = authContext?.email?.trim()
+        if (!email.isNullOrBlank()) {
+            return email
+        }
+        val subject = authContext?.subject?.trim()
+        return if (!subject.isNullOrBlank() && subject != "unknown") subject else "graphql-user"
+    }
+
+    private fun throwGraphQlOperationException(operation: String, e: Exception): Nothing {
+        if (e is CancellationException) {
+            throw e
+        }
+
+        when (e) {
+            is AuthzException,
+            is GraphQlClientException -> throw e
+            is ExecutionNotFoundException -> throw GraphQlClientException(e.message ?: "$operation failed")
+            is IllegalArgumentException,
+            is IllegalStateException -> throw GraphQlClientException(e.message ?: "$operation failed")
+            else -> {
+                logger.error("Unexpected error in GraphQL operation: $operation", e)
+                throw RuntimeException("$operation failed due to a temporary internal issue")
+            }
+        }
     }
 
     private fun build(): GraphQL {
@@ -141,8 +171,7 @@ class GraphQLProvider(
                         "items" to executions.map { formatExecution(it) }
                     )
                 } catch (e: Exception) {
-                    logger.error("Error listing executions", e)
-                    throw RuntimeException("Failed to list executions", e)
+                    throwGraphQlOperationException("Failed to list executions", e)
                 }
             }
         }
@@ -162,8 +191,7 @@ class GraphQLProvider(
                     execution?.let { formatExecution(it) }
                         ?: throw ExecutionNotFoundException("Execution $executionId not found")
                 } catch (e: Exception) {
-                    logger.error("Error fetching execution $executionId", e)
-                    throw RuntimeException("Failed to fetch execution $executionId", e)
+                    throwGraphQlOperationException("Failed to fetch execution $executionId", e)
                 }
             }
         }
@@ -182,8 +210,7 @@ class GraphQLProvider(
                     val auditEvents = auditRepository.findByExecutionId(executionId)
                     auditEvents.map { formatAuditEvent(it) }
                 } catch (e: Exception) {
-                    logger.error("Error fetching audit trail for $executionId", e)
-                    throw RuntimeException("Failed to fetch audit trail for $executionId", e)
+                    throwGraphQlOperationException("Failed to fetch audit trail for $executionId", e)
                 }
             }
         }
@@ -203,8 +230,7 @@ class GraphQLProvider(
                     val auditEvents = auditRepository.findByExecutionId(executionId)
                     auditEvents.map { formatAuditEvent(it) }
                 } catch (e: Exception) {
-                    logger.error("Error fetching audit events for $executionId", e)
-                    throw RuntimeException("Failed to fetch audit events for $executionId", e)
+                    throwGraphQlOperationException("Failed to fetch audit events for $executionId", e)
                 }
             }
         }
@@ -228,6 +254,7 @@ class GraphQLProvider(
             val authContext = authContextFromEnv(env)
             requireRole(authContext, "EXECUTOR")
             val authHeader = authContext?.rawToken ?: (context?.get("authorization") as? String)
+            val actor = resolveActor(authContext)
 
             scope.future {
                 try {
@@ -235,14 +262,12 @@ class GraphQLProvider(
                         workflowId = workflowId,
                         workflowVersion = workflowVersion,
                         input = inputMap,
-                        actor = "graphql-user",
+                        actor = actor,
                         authHeader = authHeader
                     )
                     formatExecution(execution)
                 } catch (e: Exception) {
-                    logger.error("Error starting execution", e)
-                    val detail = e.message ?: e::class.simpleName ?: "Unknown error"
-                    throw RuntimeException("Failed to start execution: $detail", e)
+                    throwGraphQlOperationException("Failed to start execution", e)
                 }
             }
         }
@@ -259,20 +284,19 @@ class GraphQLProvider(
             val authContext = authContextFromEnv(env)
             requireRole(authContext, "EXECUTOR")
             val authHeader = authContext?.rawToken ?: (context?.get("authorization") as? String)
+            val actor = resolveActor(authContext)
 
             scope.future {
                 try {
                     val stateTransitionRequest = StateTransitionRequest(
                         executionId = ExecutionId(executionId),
-                        actor = "graphql-user",
+                        actor = actor,
                         correlationId = correlationId
                     )
                     val execution = executionEngine.advanceExecution(stateTransitionRequest, authHeader)
                     formatExecution(execution)
                 } catch (e: Exception) {
-                    logger.error("Error advancing execution $executionId", e)
-                    val detail = e.message ?: e::class.simpleName ?: "Unknown error"
-                    throw RuntimeException("Failed to advance execution $executionId: $detail", e)
+                    throwGraphQlOperationException("Failed to advance execution $executionId", e)
                 }
             }
         }
@@ -350,7 +374,22 @@ class GraphQLProvider(
             .context(context)
             .build()
 
-        val result = graphQL.execute(input)
+        val result = try {
+            graphQL.execute(input)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            logger.error("GraphQL execution failed unexpectedly", t)
+            return mapOf(
+                "data" to null,
+                "errors" to listOf(
+                    mapOf<String, Any?>(
+                        "message" to "Request failed while processing GraphQL operation",
+                        "locations" to emptyList<Map<String, Int>>()
+                    )
+                )
+            )
+        }
 
         val errors = if (result.errors.isEmpty()) {
             null

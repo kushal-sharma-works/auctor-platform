@@ -22,6 +22,9 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger("GraphQLRoutes")
 
 fun Route.installGraphQlRoutes(
     cacheService: CacheService?,
@@ -100,10 +103,20 @@ fun Route.installGraphQlRoutes(
                     }
 
                     val result = gqlProvider.execute(query, variables, context)
-                    call.respond(anyToJsonElement(result))
-                } catch (e: Exception) {
+                    val errors = result["errors"] as? List<*>
+                    if (!errors.isNullOrEmpty()) {
+                        val status = statusForGraphQlErrors(errors)
+                        call.respond(status, anyToJsonElement(result))
+                    } else {
+                        call.respond(anyToJsonElement(result))
+                    }
+                } catch (t: Throwable) {
+                    if (t is kotlinx.coroutines.CancellationException) {
+                        throw t
+                    }
+                    logger.error("Failed to process GraphQL request", t)
                     call.respond(HttpStatusCode.BadRequest, mapOf(
-                        "error" to (e.message ?: "Unknown error"),
+                        "error" to (t.message ?: "GraphQL request failed"),
                         "data" to null
                     ))
                 }
@@ -129,6 +142,27 @@ fun Route.installGraphQlRoutes(
             ))
         }
     }
+}
+
+private fun statusForGraphQlErrors(errors: List<*>): HttpStatusCode {
+    val messages = errors.mapNotNull { (it as? Map<*, *>)?.get("message") as? String }
+
+    if (messages.any { it.contains("FORBIDDEN", ignoreCase = true) }) {
+        return HttpStatusCode.Forbidden
+    }
+    if (messages.any { it.contains("not found", ignoreCase = true) }) {
+        return HttpStatusCode.NotFound
+    }
+    if (messages.any {
+            it.contains("already in terminal state", ignoreCase = true) ||
+            it.contains("No valid transitions", ignoreCase = true) ||
+            it.contains("No allowed transitions", ignoreCase = true)
+        }
+    ) {
+        return HttpStatusCode.Conflict
+    }
+
+    return HttpStatusCode.BadRequest
 }
 
 private fun jsonElementToAny(element: JsonElement): Any? {
