@@ -56,6 +56,31 @@ spec:
                 configMapKeyRef:
                   name: {{ include "auctor.fullname" . }}-config
                   key: NEXT_PUBLIC_OTEL_EXPORTER_ENDPOINT
+            - name: DEFINITION_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: DEFINITION_SERVICE_URL
+            - name: EXECUTION_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: EXECUTION_SERVICE_URL
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: GOOGLE_CLIENT_ID
+            - name: NEXT_PUBLIC_GOOGLE_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: NEXT_PUBLIC_GOOGLE_CLIENT_ID
+            - name: AUCTOR_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "auctor.fullname" . }}-secrets
+                  key: AUCTOR_JWT_SECRET
           readinessProbe:
             httpGet:
               path: /

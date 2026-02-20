@@ -30,6 +30,34 @@ import { useExecution, useExecutionAuditTrail, useAdvanceExecution } from "../..
 import { useSelector } from "react-redux"
 import type { RootState } from "../../../store"
 
+function parseAdvanceExecutionError(error: unknown): string {
+  const rawMessage = error instanceof Error ? error.message : "Failed to advance execution"
+
+  const withoutPrefix = rawMessage
+    .replace(/^Exception while fetching data \(\/advanceExecution\)\s*:\s*/i, "")
+    .replace(/^Failed to advance execution\s+[^:]+:\s*/i, "")
+    .split(': {"response"')[0]
+    .trim()
+
+  if (/No allowed transitions/i.test(withoutPrefix)) {
+    return "No valid transition for current inputs. Update input values or review policy conditions."
+  }
+
+  if (/Parent job is Cancelled/i.test(withoutPrefix)) {
+    return "Execution request was interrupted. Please try again."
+  }
+
+  if (/not PUBLISHED/i.test(withoutPrefix)) {
+    return "Workflow is in Draft state. Publish it before execution."
+  }
+
+  if (/FORBIDDEN|missing role|Unauthorized|UNAUTHENTICATED/i.test(withoutPrefix)) {
+    return "You do not have permission to advance this execution."
+  }
+
+  return withoutPrefix || "Failed to advance execution"
+}
+
 export default function ExecutionDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -57,10 +85,10 @@ export default function ExecutionDetailPage() {
       })
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to advance execution",
+        title: "Cannot advance execution",
+        description: parseAdvanceExecutionError(error),
         status: "error",
-        duration: 3000,
+        duration: 5000,
         isClosable: true,
       })
     }

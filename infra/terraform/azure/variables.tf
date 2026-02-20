@@ -4,6 +4,12 @@ variable "location" {
   default     = "eastus"
 }
 
+variable "workload_location" {
+  description = "Optional region for workload resources (AKS/PostgreSQL). Leave empty to use location."
+  type        = string
+  default     = ""
+}
+
 variable "environment" {
   description = "Deployment environment name (e.g., sit)."
   type        = string
@@ -23,9 +29,9 @@ variable "aks_dns_prefix" {
 }
 
 variable "kubernetes_version" {
-  description = "AKS Kubernetes version."
+  description = "AKS Kubernetes version. Leave empty to use Azure default supported version for the region."
   type        = string
-  default     = "1.29.7"
+  default     = ""
 }
 
 variable "node_count" {
@@ -80,6 +86,18 @@ variable "postgres_standby_zone" {
   description = "PostgreSQL standby zone for HA."
   type        = string
   default     = "2"
+}
+
+variable "postgres_enable_high_availability" {
+  description = "Enable PostgreSQL high availability (requires compatible non-burstable SKU)."
+  type        = bool
+  default     = false
+}
+
+variable "postgres_public_network_access_enabled" {
+  description = "Enable public network access for PostgreSQL flexible server."
+  type        = bool
+  default     = true
 }
 
 variable "postgres_admin_username" {

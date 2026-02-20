@@ -29,11 +29,16 @@ config:
     redisUrl: "redis://redis:6379"
   web:
     otelExporterEndpoint: "http://localhost:4318/v1/traces"
+    definitionServiceUrl: "http://definition-service:8081"
+    executionServiceUrl: "http://execution-service:8082"
+    googleClientId: ""
 
 secrets:
   definitionDbPassword: "definition"
   executionDbPassword: "execution"
   definitionJwtSecret: "change-me"
+  executionJwtSecret: ""
+  auctorJwtSecret: ""
 
 ingress:
   enabled: true

@@ -39,7 +39,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/definition
       - SPRING_DATASOURCE_USERNAME=definition
       - SPRING_DATASOURCE_PASSWORD=definition
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
     depends_on:
       postgres:
         condition: service_healthy
@@ -102,7 +102,7 @@ services:
       - ./infra/monitoring/otel-collector-config.yaml:/etc/otel/config.yaml
     command: ["--config=/etc/otel/config.yaml"]
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:13133/ || exit 1"]
+      test: ["CMD", "/otelcol-contrib", "--version"]
       interval: 10s
       timeout: 3s
       retries: 5

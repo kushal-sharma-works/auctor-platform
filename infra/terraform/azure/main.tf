@@ -26,11 +26,12 @@ resource "random_string" "suffix" {
 }
 
 locals {
-  env_prefix = "${var.name_prefix}-${var.environment}"
-  rg_name    = "${local.env_prefix}-rg"
-  aks_name   = "${local.env_prefix}-aks"
-  pg_name    = "${local.env_prefix}-pg"
-  redis_name = "${local.env_prefix}-redis"
+  env_prefix        = "${var.name_prefix}-${var.environment}"
+  rg_name           = "${local.env_prefix}-rg"
+  aks_name          = "${local.env_prefix}-aks"
+  pg_name           = "${local.env_prefix}-pg"
+  redis_name        = "${local.env_prefix}-redis"
+  workload_location = var.workload_location != "" ? var.workload_location : var.location
 
   # Simple name generation: ACR names must be lowercase alphanumeric only
   acr_name = lower(replace(replace("${var.name_prefix}${var.environment}${random_string.suffix.result}", "-", ""), "_", ""))
@@ -45,10 +46,10 @@ resource "azurerm_resource_group" "rg" {
 
 resource "azurerm_kubernetes_cluster" "aks" {
   name                = local.aks_name
-  location            = azurerm_resource_group.rg.location
+  location            = local.workload_location
   resource_group_name = azurerm_resource_group.rg.name
   dns_prefix          = var.aks_dns_prefix
-  kubernetes_version  = var.kubernetes_version
+  kubernetes_version  = var.kubernetes_version != "" ? var.kubernetes_version : null
 
   default_node_pool {
     name       = "system"
@@ -80,7 +81,7 @@ resource "azurerm_role_assignment" "aks_acr_pull" {
 resource "azurerm_postgresql_flexible_server" "postgres" {
   name                   = local.pg_name
   resource_group_name    = azurerm_resource_group.rg.name
-  location               = azurerm_resource_group.rg.location
+  location               = local.workload_location
   version                = var.postgres_version
   administrator_login    = var.postgres_admin_username
   administrator_password = var.postgres_admin_password
@@ -89,13 +90,14 @@ resource "azurerm_postgresql_flexible_server" "postgres" {
   backup_retention_days  = var.postgres_backup_retention_days
   zone                   = var.postgres_zone
 
-  # Security: Disable public access for production
-  public_network_access_enabled = false
+  public_network_access_enabled = var.postgres_public_network_access_enabled
 
-  # High availability configuration
-  high_availability {
-    mode                      = "ZoneRedundant"
-    standby_availability_zone = var.postgres_standby_zone
+  dynamic "high_availability" {
+    for_each = var.postgres_enable_high_availability ? [1] : []
+    content {
+      mode                      = "ZoneRedundant"
+      standby_availability_zone = var.postgres_standby_zone
+    }
   }
 }
 

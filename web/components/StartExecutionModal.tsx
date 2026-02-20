@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import {
@@ -20,7 +20,7 @@ import {
   HStack,
 } from "@chakra-ui/react"
 import type { Workflow } from "../graphql/types"
-import { useWorkflows } from "../hooks/useGraphql"
+import { usePolicies, useWorkflow, useWorkflows } from "../hooks/useGraphql"
 import { useStartExecution } from "../hooks/useExecution"
 
 interface StartExecutionModalProps {
@@ -28,12 +28,33 @@ interface StartExecutionModalProps {
   onClose: () => void
 }
 
+function parseStartExecutionError(error: unknown): string {
+  const rawMessage = error instanceof Error ? error.message : "Failed to start execution"
+
+  const withoutPrefix = rawMessage
+    .replace(/^Exception while fetching data \(\/startExecution\)\s*:\s*/i, "")
+    .split(': {"response"')[0]
+    .trim()
+
+  if (/is not PUBLISHED/i.test(withoutPrefix)) {
+    return "Selected workflow is in Draft state. Publish it first, then start execution."
+  }
+
+  if (/Parent job is Cancelled/i.test(withoutPrefix)) {
+    return "Execution request was interrupted. Please try again."
+  }
+
+  if (/FORBIDDEN|missing role|Unauthorized|UNAUTHENTICATED/i.test(withoutPrefix)) {
+    return "You do not have permission to start executions."
+  }
+
+  return withoutPrefix || "Failed to start execution"
+}
+
 export function StartExecutionModal({ isOpen, onClose }: StartExecutionModalProps) {
   const router = useRouter()
   const toast = useToast()
   const queryClient = useQueryClient()
-  const { data: workflowData } = useWorkflows(0, 100)
-  const startExecutionMutation = useStartExecution()
 
   const [selectedWorkflow, setSelectedWorkflow] = useState<string>("")
   const [selectedVersion, setSelectedVersion] = useState<number>(1)
@@ -41,9 +62,38 @@ export function StartExecutionModal({ isOpen, onClose }: StartExecutionModalProp
   const [inputKey, setInputKey] = useState<string>("")
   const [inputValue, setInputValue] = useState<string>("")
 
+  const { data: workflowData } = useWorkflows(0, 100)
+  const { data: workflowDetails } = useWorkflow(selectedWorkflow)
+  const { data: policyData } = usePolicies(0, 200)
+  const startExecutionMutation = useStartExecution()
+
   const workflows = (workflowData?.workflows?.content || []) as Workflow[]
 
   const selectedWorkflowObj = workflows.find((w: Workflow) => w.id === selectedWorkflow)
+
+  const policyVariableOptions = useMemo(() => {
+    const workflow = workflowDetails?.workflow
+    if (!workflow) return [] as string[]
+
+    const policyRefs = new Set<string>(
+      (workflow.transitions || [])
+        .map((transition: { policyRef?: string | null }) => transition.policyRef)
+        .filter((policyRef: string | null | undefined): policyRef is string => Boolean(policyRef))
+    )
+
+    if (policyRefs.size === 0) return [] as string[]
+
+    const policies = policyData?.policies?.content || []
+    const fields: string[] = policies
+      .filter((policy: { id: string }) => policyRefs.has(policy.id))
+      .flatMap((policy: { conditions?: Array<{ field?: string }> }) =>
+        (policy.conditions || [])
+          .map((condition) => condition.field)
+          .filter((field): field is string => Boolean(field))
+      )
+
+    return Array.from(new Set(fields)).sort((a, b) => a.localeCompare(b))
+  }, [policyData?.policies?.content, workflowDetails?.workflow])
 
   const handleAddInput = () => {
     if (inputKey && inputValue) {
@@ -102,10 +152,10 @@ export function StartExecutionModal({ isOpen, onClose }: StartExecutionModalProp
       router.push("/executions")
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to start execution",
+        title: "Cannot start execution",
+        description: parseStartExecutionError(error),
         status: "error",
-        duration: 3000,
+        duration: 5000,
         isClosable: true,
       })
     }
@@ -134,6 +184,9 @@ export function StartExecutionModal({ isOpen, onClose }: StartExecutionModalProp
                   if (workflow) {
                     setSelectedVersion(workflow.version)
                   }
+                  setInputs({})
+                  setInputKey("")
+                  setInputValue("")
                 }}
                 style={{
                   width: "100%",
@@ -174,17 +227,39 @@ export function StartExecutionModal({ isOpen, onClose }: StartExecutionModalProp
                 Input Parameters
               </FormLabel>
               <Text fontSize="xs" color="slate.500">
-                Keys must match policy fields (case-sensitive). Example: Delivery=5, Item=New.
+                Select keys from workflow-linked policy fields and provide values.
               </Text>
               <VStack align="stretch" spacing={2}>
                 {/* Input Key-Value Adder */}
                 <HStack spacing={2}>
-                  <Input
-                    placeholder="Key"
-                    value={inputKey}
-                    onChange={(e) => setInputKey(e.target.value)}
-                    size="sm"
-                  />
+                  {policyVariableOptions.length > 0 ? (
+                    <select
+                      value={inputKey}
+                      onChange={(e) => setInputKey(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "8px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid #e2e8f0",
+                        fontSize: "14px",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      <option value="">Select policy variable...</option>
+                      {policyVariableOptions.map((field) => (
+                        <option key={field} value={field}>
+                          {field}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Input
+                      placeholder="Key"
+                      value={inputKey}
+                      onChange={(e) => setInputKey(e.target.value)}
+                      size="sm"
+                    />
+                  )}
                   <Input
                     placeholder="Value"
                     value={inputValue}

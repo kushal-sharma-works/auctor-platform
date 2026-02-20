@@ -71,6 +71,11 @@ spec:
                 secretKeyRef:
                   name: {{ include "auctor.fullname" . }}-secrets
                   key: EXECUTION_DB_PASSWORD
+            - name: EXECUTION_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "auctor.fullname" . }}-secrets
+                  key: EXECUTION_JWT_SECRET
             - name: EXECUTION_GRPC_HOST
               valueFrom:
                 configMapKeyRef:

@@ -1,24 +1,20 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useDispatch } from "react-redux"
 import {
   Box,
-  Button,
   Heading,
-  Input,
   Text,
   VStack,
-  HStack,
-  Divider,
   Alert,
   AlertIcon,
   Spinner,
   Center,
 } from "@chakra-ui/react"
 import { setSession } from "../../store/sessionSlice"
-import { buildSessionFromToken, getStoredSession, storeSessionToken } from "../../lib/auth-client"
+import { buildSessionFromToken, storeSessionToken } from "../../lib/auth-client"
 
 const loadGoogleScript = () => {
   if (document.getElementById("google-identity")) return
@@ -32,28 +28,28 @@ const loadGoogleScript = () => {
 
 function LoginPageContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const dispatch = useDispatch()
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
-  const devLoginEnabled = process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN === "true"
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isAuthenticating, setIsAuthenticating] = useState(false)
+  const activeLoginRef = useRef(false)
+
+  const getRedirectTarget = () => {
+    const redirectTo =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("redirect") || "/"
+        : "/"
+    if (!redirectTo.startsWith("/") || redirectTo.startsWith("/login")) {
+      return "/"
+    }
+    return redirectTo
+  }
 
   useEffect(() => {
     if (googleClientId) {
       loadGoogleScript()
     }
   }, [googleClientId])
-
-  useEffect(() => {
-    const session = getStoredSession()
-    if (session) {
-      const redirectTo = searchParams.get("redirect") || "/"
-      router.push(redirectTo)
-    }
-  }, [router, searchParams])
 
   useEffect(() => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
@@ -96,25 +92,39 @@ function LoginPageContent() {
     const session = buildSessionFromToken(token)
     if (!session) {
       setError("Invalid token response")
+      activeLoginRef.current = false
+      setIsAuthenticating(false)
       return
     }
     storeSessionToken(token)
     dispatch(setSession(session))
-    const redirectTo = searchParams.get("redirect") || "/"
-    router.push(redirectTo)
+    router.push(getRedirectTarget())
   }
 
   const handleGoogleLogin = async (idToken: string) => {
+    if (activeLoginRef.current) return
+    activeLoginRef.current = true
+    setIsAuthenticating(true)
     setError(null)
     try {
       const response = await fetch("/api/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ idToken }),
       })
 
       if (!response.ok) {
-        const message = await response.text()
+        let message = "Google login failed"
+        try {
+          const data = await response.json() as { error?: string }
+          message = data.error || message
+        } catch {
+          const text = await response.text()
+          if (text) {
+            message = text
+          }
+        }
         throw new Error(message || "Google login failed")
       }
 
@@ -122,32 +132,8 @@ function LoginPageContent() {
       applyToken(data.token)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google login failed")
-    }
-  }
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
-    setError(null)
-    setIsSubmitting(true)
-
-    try {
-      const response = await fetch("/api/auth/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      })
-
-      if (!response.ok) {
-        const message = await response.text()
-        throw new Error(message || "Login failed")
-      }
-
-      const data = await response.json()
-      applyToken(data.token)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed")
-    } finally {
-      setIsSubmitting(false)
+      activeLoginRef.current = false
+      setIsAuthenticating(false)
     }
   }
 
@@ -177,43 +163,13 @@ function LoginPageContent() {
               Google sign-in is not configured. Set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` to enable it.
             </Alert>
           ) : (
-            <Box id="google-signin" display="flex" justifyContent="center" />
-          )}
-
-          {devLoginEnabled && (
             <>
-              <Divider />
-              <form onSubmit={handleSubmit}>
-                <VStack spacing={4} align="stretch">
-                  <Input
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Username or email"
-                    autoComplete="username"
-                    isRequired
-                  />
-                  <Input
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password (mock)"
-                    type="password"
-                    autoComplete="current-password"
-                    isRequired
-                  />
-                  <Button
-                    type="submit"
-                    colorScheme="blue"
-                    isLoading={isSubmitting}
-                    isDisabled={!username || !password}
-                  >
-                    Sign in (Dev)
-                  </Button>
-                </VStack>
-              </form>
-
-              <HStack justify="center" fontSize="xs" color="gray.500">
-                <Text>Dev mode only: mock login issues app JWTs.</Text>
-              </HStack>
+              <Box id="google-signin" display="flex" justifyContent="center" />
+              {isAuthenticating && (
+                <Center>
+                  <Spinner size="md" color="blue.500" />
+                </Center>
+              )}
             </>
           )}
         </VStack>
@@ -223,17 +179,7 @@ function LoginPageContent() {
 }
 
 export default function LoginPage() {
-  return (
-    <Suspense fallback={
-      <Box minH="100vh" bg="gray.50" display="flex" alignItems="center" justifyContent="center">
-        <Center>
-          <Spinner size="xl" color="blue.500" />
-        </Center>
-      </Box>
-    }>
-      <LoginPageContent />
-    </Suspense>
-  )
+  return <LoginPageContent />
 }
 
 declare global {

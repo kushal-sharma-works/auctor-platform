@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -69,7 +70,7 @@ public class PolicyEvaluator {
         
         boolean result = switch (condition.operator()) {
             case EQ -> {
-                boolean matches = contextValueStr.equals(expectedValue);
+                boolean matches = contextValueStr.equalsIgnoreCase(expectedValue);
                 if (!matches) {
                     explanation.append("Field '").append(field).append("' value '")
                         .append(contextValueStr).append("' does not equal expected '")
@@ -78,7 +79,7 @@ public class PolicyEvaluator {
                 yield matches;
             }
             case NEQ -> {
-                boolean matches = !contextValueStr.equals(expectedValue);
+                boolean matches = !contextValueStr.equalsIgnoreCase(expectedValue);
                 if (!matches) {
                     explanation.append("Field '").append(field).append("' value '")
                         .append(contextValueStr).append("' should not equal '")
@@ -125,8 +126,9 @@ public class PolicyEvaluator {
             case IN -> {
                 Set<String> allowedValues = Arrays.stream(expectedValue.split(","))
                     .map(String::trim)
+                    .map(value -> value.toLowerCase(Locale.ROOT))
                     .collect(Collectors.toSet());
-                boolean matches = allowedValues.contains(contextValueStr);
+                boolean matches = allowedValues.contains(contextValueStr.toLowerCase(Locale.ROOT));
                 if (!matches) {
                     explanation.append("Field '").append(field).append("' value '")
                         .append(contextValueStr).append("' is not in allowed set ")
@@ -137,8 +139,9 @@ public class PolicyEvaluator {
             case NOT_IN -> {
                 Set<String> disallowedValues = Arrays.stream(expectedValue.split(","))
                     .map(String::trim)
+                    .map(value -> value.toLowerCase(Locale.ROOT))
                     .collect(Collectors.toSet());
-                boolean matches = !disallowedValues.contains(contextValueStr);
+                boolean matches = !disallowedValues.contains(contextValueStr.toLowerCase(Locale.ROOT));
                 if (!matches) {
                     explanation.append("Field '").append(field).append("' value '")
                         .append(contextValueStr).append("' is in disallowed set ")

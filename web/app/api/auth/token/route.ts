@@ -26,6 +26,14 @@ const buildRoles = (email: string): string[] => {
   return Array.from(roles)
 }
 
+const shouldUseSecureCookies = (request: Request): boolean => {
+  const forwardedProto = request.headers.get("x-forwarded-proto")
+  if (forwardedProto) {
+    return forwardedProto.split(",")[0]?.trim() === "https"
+  }
+  return new URL(request.url).protocol === "https:"
+}
+
 export async function POST(request: Request) {
   if (!devLoginEnabled) {
     return NextResponse.json({ error: "Dev login disabled" }, { status: 404 })
@@ -62,7 +70,7 @@ export async function POST(request: Request) {
       httpOnly: false,
       sameSite: "lax",
       path: "/",
-      secure: process.env.NODE_ENV === "production",
+      secure: shouldUseSecureCookies(request),
       maxAge: 60 * 60,
     })
     return response

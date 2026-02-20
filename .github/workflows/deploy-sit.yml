@@ -10,6 +10,11 @@ on:
         description: "Container image tag to deploy"
         required: false
         default: ""
+      build_images:
+        description: "Build and push images in this run"
+        required: false
+        type: boolean
+        default: true
       ingress_host:
         description: "SIT domain (Ingress host)"
         required: false
@@ -34,13 +39,23 @@ jobs:
           else
             echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
           fi
+      - name: Validate deploy mode inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ inputs.build_images }}" != "true" && -z "${{ inputs.image_tag }}" ]]; then
+            echo "image_tag is required when build_images is false" >&2
+            exit 1
+          fi
       - name: Login to ACR
+        if: ${{ inputs.build_images }}
         shell: bash
         run: |
           ACR_LOGIN_SERVER="${{ secrets.ACR_LOGIN_SERVER }}"
           ACR_NAME="${ACR_LOGIN_SERVER%%.azurecr.io}"
           az acr login --name "$ACR_NAME"
       - name: Build and push images
+        if: ${{ inputs.build_images }}
         shell: bash
         run: |
           TAG="${{ steps.vars.outputs.tag }}"
@@ -58,6 +73,37 @@ jobs:
       - uses: azure/setup-helm@v4
         with:
           version: v3.16.2
+      - name: Validate required deployment secrets
+        shell: bash
+        env:
+          DEF_DB_URL: ${{ secrets.DEF_DB_URL }}
+          DEF_DB_USER: ${{ secrets.DEF_DB_USER }}
+          DEF_DB_PASS: ${{ secrets.DEF_DB_PASS }}
+          EXEC_DB_URL: ${{ secrets.EXEC_DB_URL }}
+          EXEC_DB_USER: ${{ secrets.EXEC_DB_USER }}
+          EXEC_DB_PASS: ${{ secrets.EXEC_DB_PASS }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          DEFINITION_JWT_SECRET: ${{ secrets.DEFINITION_JWT_SECRET }}
+        run: |
+          set -euo pipefail
+          required=(
+            DEF_DB_URL DEF_DB_USER DEF_DB_PASS
+            EXEC_DB_URL EXEC_DB_USER EXEC_DB_PASS
+            REDIS_URL GOOGLE_CLIENT_ID DEFINITION_JWT_SECRET
+          )
+
+          missing=()
+          for key in "${required[@]}"; do
+            if [[ -z "${!key:-}" ]]; then
+              missing+=("$key")
+            fi
+          done
+
+          if (( ${#missing[@]} > 0 )); then
+            echo "Missing required GitHub secrets: ${missing[*]}" >&2
+            exit 1
+          fi
       - name: Deploy Helm chart
         working-directory: infra/helm
         run: |
@@ -66,4 +112,15 @@ jobs:
             -f values-sit.yaml \
             --set image.registry=${{ secrets.ACR_LOGIN_SERVER }} \
             --set image.tag=${{ steps.vars.outputs.tag }} \
-            --set ingress.host=${{ inputs.ingress_host }}
+            --set ingress.host=${{ inputs.ingress_host }} \
+            --set-string config.definition.datasourceUrl=${{ secrets.DEF_DB_URL }} \
+            --set-string config.definition.datasourceUser=${{ secrets.DEF_DB_USER }} \
+            --set-string config.execution.dbUrl=${{ secrets.EXEC_DB_URL }} \
+            --set-string config.execution.dbUser=${{ secrets.EXEC_DB_USER }} \
+            --set-string config.execution.redisUrl=${{ secrets.REDIS_URL }} \
+            --set-string config.web.googleClientId=${{ secrets.GOOGLE_CLIENT_ID }} \
+            --set-string secrets.definitionDbPassword=${{ secrets.DEF_DB_PASS }} \
+            --set-string secrets.executionDbPassword=${{ secrets.EXEC_DB_PASS }} \
+            --set-string secrets.definitionJwtSecret=${{ secrets.DEFINITION_JWT_SECRET }} \
+            --set-string secrets.executionJwtSecret=${{ secrets.EXECUTION_JWT_SECRET }} \
+            --set-string secrets.auctorJwtSecret=${{ secrets.AUCTOR_JWT_SECRET }}
