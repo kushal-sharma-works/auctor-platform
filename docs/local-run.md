@@ -3,8 +3,29 @@
 Use this guide to run Auctor fully on your machine without cloud billing.
 
 ## Prerequisites
-- Docker Desktop (or Docker Engine + Compose)
+- Git
+- Docker Desktop (or Docker Engine)
+- Docker Compose plugin (`docker compose`)
+- Recommended host capacity: 8 GB RAM, 4 CPU cores, 10 GB free disk
 - Ports free: `3000`, `8081`, `8082`, `5432`, `6379`, `9091`, `3001`, `16686`
+
+## First-time Machine Setup
+Verify tooling:
+
+```bash
+git --version
+docker --version
+docker compose version
+```
+
+If `docker compose` is not available, install/enable the Compose v2 plugin before continuing.
+
+Clone and enter repo:
+
+```bash
+git clone https://github.com/kushal-sharma-works/auctor-platform.git
+cd auctor-platform
+```
 
 ## Fastest Start
 From repo root:

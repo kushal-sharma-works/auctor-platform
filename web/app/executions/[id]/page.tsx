@@ -8,11 +8,9 @@ import {
   Heading,
   Text,
   VStack,
-  HStack,
   Spinner,
   Center,
   Grid,
-  GridItem,
   useToast,
 } from "@chakra-ui/react"
 import {

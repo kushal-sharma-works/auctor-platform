@@ -5,7 +5,6 @@ import {
   Box, 
   Badge as ChakraBadge,
   Button as ChakraButton,
-  BadgeProps,
   ButtonProps,
 } from "@chakra-ui/react"
 

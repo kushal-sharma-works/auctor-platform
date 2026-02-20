@@ -2,7 +2,6 @@
 
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import { useState } from "react"
 import { useSelector } from "react-redux"
 import {
   Box,
@@ -18,10 +17,6 @@ import {
   Badge as ChakraBadge,
   Wrap,
   WrapItem,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
 } from "@chakra-ui/react"
 import {
   Table,
@@ -40,9 +35,8 @@ import type { RootState } from "../../../store"
 export default function WorkflowDetailPage() {
   const params = useParams()
   const workflowId = Array.isArray(params.id) ? params.id[0] : params.id
-  const { data, isLoading, error, refetch } = useWorkflow(workflowId ?? "")
+  const { data, isLoading, refetch } = useWorkflow(workflowId ?? "")
   const publishMutation = usePublishWorkflow()
-  const [publishError, setPublishError] = useState<string | null>(null)
   const roles = useSelector((state: RootState) => state.session.roles)
   const canAdmin = roles.includes("ADMIN")
 
@@ -50,13 +44,12 @@ export default function WorkflowDetailPage() {
 
   const handlePublish = async () => {
     if (!workflowId) return
-    setPublishError(null)
     try {
       await publishMutation.mutateAsync(workflowId)
       await refetch()
-    } catch (err: any) {
-      const errorMessage = err?.response?.errors?.[0]?.message || "Failed to publish workflow"
-      setPublishError(errorMessage)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to publish workflow"
+      console.error("Failed to publish workflow", message)
     }
   }
 

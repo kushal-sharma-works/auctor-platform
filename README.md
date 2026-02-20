@@ -27,6 +27,18 @@ flowchart LR
 | Platform | Helm, Terraform | 3.x, 1.6+ |
 
 ## Run Locally (Docker Compose)
+Prerequisites (fresh machine):
+- Docker Engine/Desktop installed
+- Docker Compose plugin (`docker compose version` works)
+- At least 8 GB RAM available to Docker
+- Ports free: `3000`, `3001`, `5432`, `6379`, `8081`, `8082`, `9091`, `16686`
+
+Create local web env file once:
+```bash
+cp web/.env.example web/.env.local
+```
+Keep `web/.env.local` local-only (do not commit it).
+
 ```bash
 docker compose up --build
 ```
@@ -95,6 +107,7 @@ Use these checks for local-only demos:
 - Architecture and flows: [docs/architecture.md](docs/architecture.md)
 - ADRs: [docs/decisions.md](docs/decisions.md)
 - Local demo runbook: [docs/local-run.md](docs/local-run.md)
+- Project operating manual: [docs/project-operating-manual.md](docs/project-operating-manual.md)
 
 ## Repository Assets (Optional for Cloud)
 

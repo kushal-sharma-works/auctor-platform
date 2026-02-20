@@ -1,6 +1,5 @@
 package com.auctor.execution.domain
 
-import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import kotlin.test.assertEquals
@@ -42,11 +41,10 @@ class ExecutionEngineTest {
         val suspended = ExecutionStatus.Suspended
         val failed = ExecutionStatus.Failed("Error message")
 
-        assertTrue(running is ExecutionStatus.Running)
-        assertTrue(completed is ExecutionStatus.Completed)
-        assertTrue(suspended is ExecutionStatus.Suspended)
-        assertTrue(failed is ExecutionStatus.Failed)
-        assertEquals("Error message", (failed as ExecutionStatus.Failed).reason)
+        assertEquals(ExecutionStatus.Running, running)
+        assertEquals(ExecutionStatus.Completed, completed)
+        assertEquals(ExecutionStatus.Suspended, suspended)
+        assertEquals("Error message", failed.reason)
     }
 
     @Test

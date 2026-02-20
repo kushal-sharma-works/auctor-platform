@@ -11,8 +11,6 @@ jest.mock("../store/token", () => ({
   clearStoredToken: jest.fn(),
 }))
 
-const tokenStore = require("../store/token")
-
 describe("auth-client utilities", () => {
   const createToken = (payload: Record<string, any>) => {
     const header = { alg: "HS256", typ: "JWT" }

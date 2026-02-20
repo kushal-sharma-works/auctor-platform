@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Local Full Stack Testing Script
-# Starts all services with docker-compose and runs smoke tests
+# Starts all services with docker compose and runs smoke tests
 
 set -e
 
@@ -37,7 +37,7 @@ print_header() {
 cleanup() {
     print_header "🧹 Cleaning up"
     cd "$PROJECT_ROOT"
-    docker-compose down -v
+    docker compose down -v
 }
 
 # Set trap to cleanup on exit
@@ -50,7 +50,7 @@ cd "$PROJECT_ROOT"
 # 1. Start services
 print_header "1️⃣ Starting Services"
 echo "Building and starting all services..."
-docker-compose up -d --build
+docker compose up -d --build
 
 # 2. Wait for services to be healthy
 print_header "2️⃣ Waiting for Services"
@@ -63,7 +63,7 @@ echo "Waiting for services to be healthy (timeout: ${MAX_WAIT}s)..."
 
 while [ $ELAPSED -lt $MAX_WAIT ]; do
     # Check if all services are healthy
-    UNHEALTHY=$(docker-compose ps | grep -c "unhealthy\|starting" || true)
+    UNHEALTHY=$(docker compose ps | grep -c "unhealthy\|starting" || true)
     
     if [ "$UNHEALTHY" -eq 0 ]; then
         print_success "All services are healthy!"
@@ -78,10 +78,10 @@ done
 if [ $ELAPSED -ge $MAX_WAIT ]; then
     print_error "Services did not become healthy in time"
     echo "Current status:"
-    docker-compose ps
+    docker compose ps
     echo ""
     echo "Logs from unhealthy services:"
-    docker-compose logs --tail=50
+    docker compose logs --tail=50
     exit 1
 fi
 
@@ -187,7 +187,7 @@ echo "Scanning logs for errors..."
 ERROR_COUNT=0
 
 for service in definition-service execution-service web; do
-    ERRORS=$(docker-compose logs $service | grep -i "error" | grep -v "0 error" | wc -l)
+    ERRORS=$(docker compose logs $service | grep -i "error" | grep -v "0 error" | wc -l)
     if [ "$ERRORS" -gt 0 ]; then
         print_warning "$service has $ERRORS error log entries"
         ERROR_COUNT=$((ERROR_COUNT + ERRORS))
@@ -200,14 +200,14 @@ done
 print_header "5️⃣ Verifying Structured Logging"
 
 echo "Checking Definition Service logs..."
-if docker-compose logs definition-service | tail -5 | grep -q '"service":"definition-service"'; then
+if docker compose logs definition-service | tail -5 | grep -q '"service":"definition-service"'; then
     print_success "Definition Service using structured JSON logging"
 else
     print_warning "Definition Service may not be using structured logging"
 fi
 
 echo "Checking Execution Service logs..."
-if docker-compose logs execution-service | tail -5 | grep -q '"service":"execution-service"'; then
+if docker compose logs execution-service | tail -5 | grep -q '"service":"execution-service"'; then
     print_success "Execution Service using structured JSON logging"
 else
     print_warning "Execution Service may not be using structured logging"
@@ -243,7 +243,7 @@ if [ $TESTS_FAILED -eq 0 ]; then
     echo "Press Ctrl+C to stop all services"
     
     # Keep running
-    docker-compose logs -f
+    docker compose logs -f
 else
     echo ""
     echo -e "${RED}"

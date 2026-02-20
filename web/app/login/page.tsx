@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useDispatch } from "react-redux"
 import {
@@ -34,7 +34,7 @@ function LoginPageContent() {
   const [isAuthenticating, setIsAuthenticating] = useState(false)
   const activeLoginRef = useRef(false)
 
-  const getRedirectTarget = () => {
+  const getRedirectTarget = useCallback(() => {
     const redirectTo =
       typeof window !== "undefined"
         ? new URLSearchParams(window.location.search).get("redirect") || "/"
@@ -43,13 +43,62 @@ function LoginPageContent() {
       return "/"
     }
     return redirectTo
-  }
+  }, [])
 
   useEffect(() => {
     if (googleClientId) {
       loadGoogleScript()
     }
   }, [googleClientId])
+
+  const applyToken = useCallback((token: string) => {
+    const session = buildSessionFromToken(token)
+    if (!session) {
+      setError("Invalid token response")
+      activeLoginRef.current = false
+      setIsAuthenticating(false)
+      return
+    }
+    storeSessionToken(token)
+    dispatch(setSession(session))
+    router.push(getRedirectTarget())
+  }, [dispatch, getRedirectTarget, router])
+
+  const handleGoogleLogin = useCallback(async (idToken: string) => {
+    if (activeLoginRef.current) return
+    activeLoginRef.current = true
+    setIsAuthenticating(true)
+    setError(null)
+    try {
+      const response = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ idToken }),
+      })
+
+      if (!response.ok) {
+        let message = "Google login failed"
+        try {
+          const data = await response.json() as { error?: string }
+          message = data.error || message
+        } catch {
+          const text = await response.text()
+          if (text) {
+            message = text
+          }
+        }
+        throw new Error(message || "Google login failed")
+      }
+
+      const data = await response.json()
+      applyToken(data.token)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Google login failed")
+      activeLoginRef.current = false
+      setIsAuthenticating(false)
+    }
+  }, [applyToken])
 
   useEffect(() => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
@@ -86,56 +135,7 @@ function LoginPageContent() {
     }, 200)
 
     return () => clearInterval(interval)
-  }, [])
-
-  const applyToken = (token: string) => {
-    const session = buildSessionFromToken(token)
-    if (!session) {
-      setError("Invalid token response")
-      activeLoginRef.current = false
-      setIsAuthenticating(false)
-      return
-    }
-    storeSessionToken(token)
-    dispatch(setSession(session))
-    router.push(getRedirectTarget())
-  }
-
-  const handleGoogleLogin = async (idToken: string) => {
-    if (activeLoginRef.current) return
-    activeLoginRef.current = true
-    setIsAuthenticating(true)
-    setError(null)
-    try {
-      const response = await fetch("/api/auth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ idToken }),
-      })
-
-      if (!response.ok) {
-        let message = "Google login failed"
-        try {
-          const data = await response.json() as { error?: string }
-          message = data.error || message
-        } catch {
-          const text = await response.text()
-          if (text) {
-            message = text
-          }
-        }
-        throw new Error(message || "Google login failed")
-      }
-
-      const data = await response.json()
-      applyToken(data.token)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Google login failed")
-      activeLoginRef.current = false
-      setIsAuthenticating(false)
-    }
-  }
+  }, [handleGoogleLogin])
 
   return (
     <Box minH="100vh" bg="gray.50" display="flex" alignItems="center" justifyContent="center" px={6}>

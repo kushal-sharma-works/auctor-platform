@@ -1,6 +1,5 @@
 package com.auctor.definition.api.graphql.dto;
 
-import com.auctor.definition.domain.model.Transition;
 import com.auctor.definition.domain.model.WorkflowDefinition;
 
 import java.util.List;

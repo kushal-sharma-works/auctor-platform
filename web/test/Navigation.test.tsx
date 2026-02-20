@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { Navigation } from "../components/Navigation"
 import { Provider } from "react-redux"
 import { store } from "../store"
-import { setSession, clearToken } from "../store/sessionSlice"
+import { setSession } from "../store/sessionSlice"
 import { ChakraProvider } from "@chakra-ui/react"
 import { useRouter, usePathname } from "next/navigation"
 

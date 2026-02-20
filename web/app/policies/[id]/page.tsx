@@ -2,7 +2,6 @@
 
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import { useState } from "react"
 import { useSelector } from "react-redux"
 import {
   Box,
@@ -16,10 +15,6 @@ import {
   Stack,
   HStack,
   Badge as ChakraBadge,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
 } from "@chakra-ui/react"
 import { Layout } from "../../../components/Layout"
 import { Badge } from "../../../components/UI"
@@ -29,9 +24,8 @@ import type { RootState } from "../../../store"
 export default function PolicyDetailPage() {
   const params = useParams()
   const policyId = Array.isArray(params.id) ? params.id[0] : params.id
-  const { data, isLoading, error, refetch } = usePolicy(policyId ?? "")
+  const { data, isLoading, refetch } = usePolicy(policyId ?? "")
   const publishMutation = usePublishPolicy()
-  const [publishError, setPublishError] = useState<string | null>(null)
   const roles = useSelector((state: RootState) => state.session.roles)
   const canAdmin = roles.includes("ADMIN")
 
@@ -39,13 +33,12 @@ export default function PolicyDetailPage() {
 
   const handlePublish = async () => {
     if (!policyId) return
-    setPublishError(null)
     try {
       await publishMutation.mutateAsync(policyId)
       await refetch()
-    } catch (err: any) {
-      const errorMessage = err?.response?.errors?.[0]?.message || "Failed to publish policy"
-      setPublishError(errorMessage)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to publish policy"
+      console.error("Failed to publish policy", message)
     }
   }
 

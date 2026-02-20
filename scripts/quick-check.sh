@@ -49,9 +49,9 @@ else
     CHECKS_FAILED=$((CHECKS_FAILED + 1))
 fi
 
-# 4. Check docker-compose
+# 4. Check docker compose
 echo -n "Checking docker-compose.yml... "
-if docker-compose config > /dev/null 2>&1; then
+if docker compose config > /dev/null 2>&1; then
     echo -e "${GREEN}✓${NC}"
     CHECKS_PASSED=$((CHECKS_PASSED + 1))
 else
@@ -68,7 +68,7 @@ if [ $CHECKS_FAILED -eq 0 ]; then
     echo "Next steps:"
     echo "  1. Run full tests: ./scripts/validate-all.sh"
     echo "  2. Test locally:   ./scripts/test-local.sh"
-    echo "  3. Deploy to SIT:  See docs/deployment-guide.md"
+    echo "  3. Local run guide: See docs/local-run.md"
     exit 0
 else
     echo -e "${RED}Fix issues before deploying${NC}"

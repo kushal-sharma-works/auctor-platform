@@ -1,7 +1,6 @@
 package com.auctor.definition.infra.adapter;
 
 import com.auctor.definition.domain.model.PolicyDefinition;
-import com.auctor.definition.domain.model.PolicyId;
 import com.auctor.definition.domain.port.PolicyCommandPort;
 import com.auctor.definition.infra.jpa.PolicyJpaEntity;
 import com.auctor.definition.infra.jpa.PolicyJpaRepository;

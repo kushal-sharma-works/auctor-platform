@@ -5,7 +5,6 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.Tags
 
 fun Route.installMetricsRoute(meterRegistry: MeterRegistry) {
     get("/metrics") {

@@ -16,7 +16,7 @@ export async function POST(request: Request): Promise<Response> {
   let body: string
   try {
     body = await request.text()
-  } catch (error) {
+  } catch {
     return new Response(
       JSON.stringify({ error: "Invalid request body" }),
       {

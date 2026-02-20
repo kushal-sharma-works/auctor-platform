@@ -45,7 +45,7 @@
 #### Definition Service
 ```bash
 # Start dependencies
-docker-compose up -d postgres
+docker compose up -d postgres
 
 # Run service
 cd services/definition-service
@@ -59,7 +59,7 @@ curl http://localhost:8081/actuator/prometheus
 #### Execution Service
 ```bash
 # Start dependencies
-docker-compose up -d postgres redis
+docker compose up -d postgres redis
 
 # Run service
 cd services/execution-service
@@ -84,13 +84,13 @@ open http://localhost:3000
 ### Services Won't Start
 ```bash
 # Check logs
-docker-compose logs <service-name>
+docker compose logs <service-name>
 
 # Check service status
-docker-compose ps
+docker compose ps
 
 # Restart specific service
-docker-compose restart <service-name>
+docker compose restart <service-name>
 ```
 
 ### Tests Failing
@@ -154,7 +154,7 @@ cd services/execution-service
 ### Scan Docker Images
 ```bash
 # Build images
-docker-compose build
+docker compose build
 
 # Scan with Trivy (install: brew install trivy)
 trivy image auctor-platform-definition-service

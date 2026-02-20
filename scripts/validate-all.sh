@@ -167,7 +167,7 @@ fi
 print_header "6️⃣ Docker Compose Validation"
 
 echo "Checking docker-compose.yml syntax..."
-if cd "$PROJECT_ROOT" && docker-compose config > /dev/null 2>&1; then
+if cd "$PROJECT_ROOT" && docker compose config > /dev/null 2>&1; then
     print_success "docker-compose.yml is valid"
 else
     print_error "docker-compose.yml validation failed"
@@ -178,10 +178,9 @@ print_header "7️⃣ Documentation Check"
 
 REQUIRED_DOCS=(
     "docs/architecture.md"
-    "docs/operations.md"
-    "docs/production-readiness.md"
-    "docs/deployment-guide.md"
-    "docs/disaster-recovery.md"
+    "docs/decisions.md"
+    "docs/local-run.md"
+    "docs/project-operating-manual.md"
 )
 
 for doc in "${REQUIRED_DOCS[@]}"; do

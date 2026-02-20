@@ -24,9 +24,9 @@ Top-level areas:
 - `infra/terraform/azure`: infrastructure provisioning templates
 - `infra/helm`: Kubernetes deployment chart
 - `infra/argocd`: GitOps manifests
-- `monitoring`: Prometheus / Grafana / OTel config
+- `infra/monitoring`: Prometheus / Grafana / OTel config
 - `scripts`: validation and local test runners
-- `docs`: architecture, decisions, operations, DR, readiness
+- `docs`: architecture, decisions, local run, and project operating manual
 
 ## 3) Runtime architecture and request flows
 
@@ -200,3 +200,4 @@ For deeper topic-specific details, also read:
 - `docs/architecture.md`
 - `docs/decisions.md`
 - `docs/local-run.md`
+- `docs/project-operating-manual.md`

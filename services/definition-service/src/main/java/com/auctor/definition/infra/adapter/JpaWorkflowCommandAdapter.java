@@ -1,8 +1,6 @@
 package com.auctor.definition.infra.adapter;
 
 import com.auctor.definition.domain.model.WorkflowDefinition;
-import com.auctor.definition.domain.model.WorkflowId;
-import com.auctor.definition.domain.model.WorkflowStatus;
 import com.auctor.definition.domain.port.WorkflowCommandPort;
 import com.auctor.definition.infra.jpa.WorkflowJpaEntity;
 import com.auctor.definition.infra.jpa.WorkflowJpaRepository;

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { signJwt } from "../../../../lib/jwt-server"
 import { isAdminEmail } from "../../../../lib/admins"
 
-const devLoginEnabled = process.env.ENABLE_DEV_LOGIN === "true"
+const devLoginEnabled = (process.env.ENABLE_DEV_LOGIN ?? "false") === "true"
 
 const getSecret = () =>
   process.env.AUCTOR_JWT_SECRET ||
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       maxAge: 60 * 60,
     })
     return response
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 })
   }
 }
