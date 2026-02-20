@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import LoginPage from "../app/login/page"
 import { Provider } from "react-redux"
 import { store } from "../store"
@@ -17,49 +17,81 @@ const buildToken = (payload: Record<string, unknown>) => {
 
 describe("LoginPage", () => {
   const pushMock = jest.fn()
+  let googleCallback: ((response: { credential?: string }) => void) | null = null
 
   beforeEach(() => {
     pushMock.mockClear()
+    googleCallback = null
     ;(useRouter as jest.Mock).mockReturnValue({
       push: pushMock,
       replace: jest.fn(),
       prefetch: jest.fn(),
       back: jest.fn(),
     })
-    process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN = "true"
+    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = "test-google-client-id.apps.googleusercontent.com"
     ;(global.fetch as jest.Mock) = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         token: buildToken({ sub: "user", roles: ["VIEWER", "EXECUTOR"], exp: 9999999999 }),
       }),
     })
+
+    Object.defineProperty(window, "google", {
+      configurable: true,
+      writable: true,
+      value: {
+        accounts: {
+          id: {
+            initialize: jest.fn((config: { callback: (response: { credential?: string }) => void }) => {
+              googleCallback = config.callback
+            }),
+            renderButton: jest.fn(),
+          },
+        },
+      },
+    })
   })
 
-  it("submits credentials and redirects", async () => {
+  it("handles successful Google sign-in and redirects", async () => {
     render(
       <Provider store={store}>
         <LoginPage />
       </Provider>
     )
 
-    fireEvent.change(screen.getByPlaceholderText("Username or email"), {
-      target: { value: "user@example.com" },
-    })
-    fireEvent.change(screen.getByPlaceholderText("Password (mock)"), {
-      target: { value: "password" },
+    await waitFor(() => {
+      expect(googleCallback).not.toBeNull()
     })
 
-    fireEvent.click(screen.getByRole("button", { name: "Sign in (Dev)" }))
+    googleCallback?.({ credential: "google-id-token" })
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
-        "/api/auth/token",
+        "/api/auth/google",
         expect.objectContaining({ method: "POST" })
       )
     })
 
     await waitFor(() => {
       expect(pushMock).toHaveBeenCalledWith("/")
+    })
+  })
+
+  it("shows info when Google client id is missing", async () => {
+    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = ""
+
+    render(
+      <Provider store={store}>
+        <LoginPage />
+      </Provider>
+    )
+
+    expect(
+      screen.getByText("Google sign-in is not configured. Set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` to enable it.")
+    ).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(global.fetch).not.toHaveBeenCalled()
     })
   })
 })
