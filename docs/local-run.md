@@ -1,6 +1,6 @@
 # Local Recruiter Demo (No Azure Cost)
 
-Use this guide to run Auctor fully on your machine without cloud billing.
+Use this guide to run the Auctor local demo stack on your machine without cloud billing.
 
 ## Prerequisites
 - Git
@@ -38,7 +38,7 @@ Open:
 - Web: http://localhost:3000
 - Definition service: http://localhost:8081/actuator/health
 - Execution service: http://localhost:8082/health
-- Grafana: http://localhost:3001 (admin/admin)
+- Grafana: http://localhost:3001 (admin/admin, Auctor dashboard opens by default)
 - Jaeger: http://localhost:16686
 
 ## One-Command Validation (recommended)

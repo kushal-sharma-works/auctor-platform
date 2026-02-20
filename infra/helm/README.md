@@ -1,6 +1,6 @@
 # Auctor Helm Chart
 
-Production-ready Helm chart for the Auctor platform with environment overlays for dev and SIT.
+Helm chart for the Auctor platform with environment overlays for dev and SIT.
 
 ## Prerequisites
 - Kubernetes 1.26+

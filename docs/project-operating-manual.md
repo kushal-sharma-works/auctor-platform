@@ -1,6 +1,6 @@
 # Auctor Platform — Project Operating Manual
 
-This document is the single, comprehensive reference for how the project is built, why key decisions were made, how it runs, and how to operate it safely for local demos and evaluations.
+This document is the primary reference for how the project is built, why key decisions were made, how it runs, and how to operate it safely for local demos and evaluations.
 
 ## 1) What this platform is
 
@@ -143,7 +143,7 @@ Platform shows production-minded quality patterns:
 - structured logging and observability stack
 - security context defaults and least-privilege direction
 - infrastructure-as-code and environment overlays
-- documented DR/readiness/operations artifacts
+- local-first runbooks and validation scripts
 
 ## 12) Decision rationale (condensed)
 
