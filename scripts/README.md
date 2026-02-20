@@ -194,6 +194,5 @@ helm upgrade --install auctor-sit . \
 
 ## 📖 More Information
 
-- **Detailed Guide**: [Pre-Deployment Validation](../docs/pre-deployment-validation.md)
-- **Deployment**: [Deployment Guide](../docs/deployment-guide.md)
-- **Operations**: [Operations Guide](../docs/operations.md)
+- **Architecture**: [Architecture](../docs/architecture.md)
+- **Local demo**: [Local Run Guide](../docs/local-run.md)

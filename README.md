@@ -1,15 +1,15 @@
 # Auctor Platform
 
-Auctor is a policy-driven workflow execution platform for deterministic decisions, auditability, and compliance.
+Auctor is a policy-driven workflow execution platform for deterministic decisions and clear execution tracking.
 It separates workflow definition from execution to keep governance strict while allowing high-throughput runtime operations.
 
-The stack ships with production-grade infrastructure, CI pipelines, and observability wiring so teams can run it in SIT with minimal glue.
+The stack is documented for local-first runtime, with optional infrastructure assets for teams that want cloud deployment later.
 
 ## Architecture
 ```mermaid
 flowchart LR
-	web[Web UI] -->|REST| defsvc[definition-service]
-	web -->|GraphQL| execsvc[execution-service]
+	web[Web UI] -->|HTTP /api/definition-graphql| defsvc[definition-service]
+	web -->|HTTP /api/execution-graphql| execsvc[execution-service]
 	execsvc -->|gRPC| defsvc
 	defsvc -->|Postgres| db[(PostgreSQL)]
 	execsvc -->|Postgres| db
@@ -54,9 +54,9 @@ cd web
 npm test
 ```
 
-## 🧪 Pre-Deployment Testing
+## ✅ Local Validation
 
-Before deploying to SIT, validate everything works:
+Use these checks for local-only demos:
 
 ### Quick Check (30 seconds)
 ```bash
@@ -74,34 +74,6 @@ Before deploying to SIT, validate everything works:
 ./scripts/test-local.sh
 ```
 
-**📖 Detailed Guide**: See [Pre-Deployment Validation](docs/pre-deployment-validation.md)
-
-## Deploy to Kubernetes (SIT)
-1) Provision Azure infrastructure:
-```bash
-cd infra/terraform/azure
-cp terraform.tfvars.example terraform.tfvars
-terraform init -backend=false
-terraform apply
-```
-
-2) Deploy with Helm:
-```bash
-cd infra/helm
-helm upgrade --install auctor-sit . -n auctor --create-namespace -f values-sit.yaml \
-	--set ingress.host=auctor-platform.sit.example.com
-```
-
-3) Point DNS to the ingress controller:
-- Create an `A` record for your SIT domain pointing to the ingress public IP.
-- Use your own domain (e.g. `auctor-platform.sit.example.com`).
-
-4) Optional Argo CD:
-```bash
-kubectl apply -n argocd -f infra/argocd/project.yaml
-kubectl apply -n argocd -f infra/argocd/application-sit.yaml
-```
-
 ## Project Structure
 - `services/definition-service`: Policy and workflow definition service (Spring Boot)
 - `services/execution-service`: Execution runtime service (Ktor)
@@ -109,11 +81,12 @@ kubectl apply -n argocd -f infra/argocd/application-sit.yaml
 - `infra/terraform/azure`: Azure infrastructure provisioning
 - `infra/helm`: Helm chart for Kubernetes deploys
 - `infra/argocd`: Argo CD app/project manifests
-- `docs/`: Architecture notes, ADRs, and tradeoffs
+- `docs/`: Architecture notes, ADRs, and local run guidance
 
 ## Design Decisions (Summary)
 - Monorepo for shared evolution and consistent release cadence.
-- gRPC for runtime calls, REST for definition CRUD, GraphQL for UI.
+- GraphQL for UI-facing definition/execution operations, gRPC for internal service-to-service lookups.
+- Google sign-in (current primary login path) with platform JWT issued for backend authorization.
 - Versioned immutable definitions for deterministic replay.
 - Split persistence models: JPA for definition, Exposed for execution.
 - Cache layering: Caffeine + Redis for hot paths.
@@ -121,43 +94,20 @@ kubectl apply -n argocd -f infra/argocd/application-sit.yaml
 ## Documentation
 - Architecture and flows: [docs/architecture.md](docs/architecture.md)
 - ADRs: [docs/decisions.md](docs/decisions.md)
-- Tradeoffs: [docs/tradeoffs.md](docs/tradeoffs.md)
-- Operations: [docs/operations.md](docs/operations.md)
-- **Production Readiness**: [docs/production-readiness.md](docs/production-readiness.md)
-- **Deployment Guide**: [docs/deployment-guide.md](docs/deployment-guide.md)
-- **Disaster Recovery**: [docs/disaster-recovery.md](docs/disaster-recovery.md)
+- Local demo runbook: [docs/local-run.md](docs/local-run.md)
 
-## Production Enhancements ✨
+## Repository Assets (Optional for Cloud)
 
-### Security
-- ✅ Pod Security Contexts (runAsNonRoot, drop ALL capabilities)
-- ✅ RBAC with dedicated Service Accounts
-- ✅ Network Policies for service isolation
-- ✅ Vulnerability scanning (Trivy, OWASP, TruffleHog)
-- ✅ PostgreSQL with private endpoint and Zone Redundant HA
-
-### Observability
-- ✅ OpenTelemetry tracing with Jaeger
-- ✅ Prometheus metrics + custom business metrics
-- ✅ Structured JSON logging with correlation IDs
-- ✅ Pre-configured Grafana dashboards
-- ✅ Prometheus alerting rules
-
-### High Availability
-- ✅ HPA for all services (CPU-based scaling)
-- ✅ Pod Disruption Budgets
-- ✅ Anti-affinity rules for fault tolerance
-- ✅ 30-day backup retention for PostgreSQL
-
-### DevOps
-- ✅ Helm charts with environment-specific values
-- ✅ GitOps-ready (ArgoCD configurations)
-- ✅ Terraform for Azure (AKS, ACR, PostgreSQL, Redis, Key Vault)
-- ✅ CI/CD with automated security scanning
+The following are present in the repository but are optional for local demo usage:
+- Helm templates and values under `infra/helm`
+- Terraform modules under `infra/terraform/azure`
+- Argo CD manifests under `infra/argocd`
+- CI/CD workflows under `.github/workflows`
+- Monitoring config under `infra/monitoring`
 
 ## Deliberately Not Included
 - BPMN engine: focused on deterministic policy workflows.
-- Custom auth provider: relies on JWT validation only.
+- Custom auth provider: uses Google identity + platform JWT model.
 - Event bus (Kafka): avoided for scope and ops simplicity.
 - Full RBAC admin UI: minimized front-end surface.
 

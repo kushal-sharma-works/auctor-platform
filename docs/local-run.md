@@ -1,0 +1,52 @@
+# Local Recruiter Demo (No Azure Cost)
+
+Use this guide to run Auctor fully on your machine without cloud billing.
+
+## Prerequisites
+- Docker Desktop (or Docker Engine + Compose)
+- Ports free: `3000`, `8081`, `8082`, `5432`, `6379`, `9091`, `3001`, `16686`
+
+## Fastest Start
+From repo root:
+
+```bash
+docker compose up --build
+```
+
+Open:
+- Web: http://localhost:3000
+- Definition service: http://localhost:8081/actuator/health
+- Execution service: http://localhost:8082/health
+- Grafana: http://localhost:3001 (admin/admin)
+- Jaeger: http://localhost:16686
+
+## One-Command Validation (recommended)
+From repo root:
+
+```bash
+./scripts/test-local.sh
+```
+
+This starts the stack, waits for health, runs smoke checks, and prints service URLs.
+
+## Shutdown
+```bash
+docker compose down -v
+```
+
+## Recruiter Demo Flow (5 minutes)
+1. Open `http://localhost:3000`
+2. Login with Google/dev flow as configured
+3. Show workflow definitions and policies
+4. Start an execution
+5. Advance execution and show audit trail
+6. Show observability in Grafana/Jaeger
+
+## Troubleshooting
+- If a port is busy:
+  - `lsof -i :3000` (replace port) and stop conflicting process
+- If containers fail:
+  - `docker compose ps`
+  - `docker compose logs --tail=100`
+- If web not loading:
+  - `docker compose restart web`
