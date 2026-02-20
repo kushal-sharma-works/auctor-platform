@@ -66,26 +66,6 @@ cd web
 npm test
 ```
 
-## ✅ Local Validation
-
-Use these checks for local-only demos:
-
-### Quick Check (30 seconds)
-```bash
-./scripts/quick-check.sh
-```
-
-### Full Validation (5-10 minutes)
-```bash
-./scripts/validate-all.sh
-```
-
-### Local Full Stack Test
-```bash
-# Starts all services and runs smoke tests
-./scripts/test-local.sh
-```
-
 ## Project Structure
 - `services/definition-service`: Policy and workflow definition service (Spring Boot)
 - `services/execution-service`: Execution runtime service (Ktor)

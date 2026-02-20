@@ -41,15 +41,6 @@ Open:
 - Grafana: http://localhost:3001 (admin/admin, Auctor dashboard opens by default)
 - Jaeger: http://localhost:16686
 
-## One-Command Validation (recommended)
-From repo root:
-
-```bash
-./scripts/test-local.sh
-```
-
-This starts the stack, waits for health, runs smoke checks, and prints service URLs.
-
 ## Shutdown
 ```bash
 docker compose down -v

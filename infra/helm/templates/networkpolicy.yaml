@@ -1,6 +1,18 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: {{ include "auctor.fullname" . }}-default-deny
+  labels:
+    {{- include "auctor.labels" (dict "context" . "name" "networkpolicy") | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: {{ include "auctor.fullname" . }}-definition-ingress
   labels:
     {{- include "auctor.labels" (dict "context" . "name" "definition-service") | nindent 4 }}
@@ -10,6 +22,7 @@ spec:
       {{- include "auctor.selectorLabels" (dict "context" . "name" "definition-service") | nindent 6 }}
   policyTypes:
     - Ingress
+    - Egress
   ingress:
     - from:
         - podSelector:
@@ -25,6 +38,29 @@ spec:
       ports:
         - protocol: TCP
           port: {{ .Values.services.definition.httpPort }}
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "auctor.selectorLabels" (dict "context" . "name" "otel-collector") | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: 4317
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -38,6 +74,7 @@ spec:
       {{- include "auctor.selectorLabels" (dict "context" . "name" "execution-service") | nindent 6 }}
   policyTypes:
     - Ingress
+    - Egress
   ingress:
     - from:
         - podSelector:
@@ -46,3 +83,79 @@ spec:
       ports:
         - protocol: TCP
           port: {{ .Values.services.execution.httpPort }}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "auctor.selectorLabels" (dict "context" . "name" "definition-service") | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.services.definition.grpcPort }}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6379
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "auctor.selectorLabels" (dict "context" . "name" "otel-collector") | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: 4317
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "auctor.fullname" . }}-web-ingress
+  labels:
+    {{- include "auctor.labels" (dict "context" . "name" "web") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "auctor.selectorLabels" (dict "context" . "name" "web") | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.services.web.httpPort }}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "auctor.selectorLabels" (dict "context" . "name" "definition-service") | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.services.definition.httpPort }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "auctor.selectorLabels" (dict "context" . "name" "execution-service") | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.services.execution.httpPort }}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

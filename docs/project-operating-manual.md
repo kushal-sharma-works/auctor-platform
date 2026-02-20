@@ -116,9 +116,6 @@ Use local mode for recruiter/demo flows:
 - Web at `http://localhost:3000`
 - backend services on `8081`, `8082`
 
-For guided smoke checks:
-- `./scripts/test-local.sh`
-
 Why local-first:
 - near-zero cloud cost
 - repeatable and fast demo reset
