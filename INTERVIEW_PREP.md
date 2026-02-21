@@ -22,6 +22,9 @@ This document prepares you for every question a European or Indian recruiter —
 14. [Versioning, Schema & Data Integrity](#14-versioning-schema--data-integrity)
 15. [Runtime Behaviour & Edge Cases](#15-runtime-behaviour--edge-cases)
 16. [File-by-File Reference Index](#16-file-by-file-reference-index)
+17. [Behavioural / STAR Questions](#17-behavioural--star-questions)
+18. [Live Coding & Whiteboard Questions](#18-live-coding--whiteboard-questions)
+19. [Senior-Engineer Depth Questions](#19-senior-engineer-depth-questions)
 
 ---
 
@@ -996,6 +999,325 @@ This section maps every file to a one-sentence description. Use it when an inter
 | `security-scan.yml` | Dependency vulnerability scanning |
 | `dependency-review.yml` | GitHub Dependency Review Action on PRs |
 | `workflow-lint.yml` | Lints CI YAML files for syntax errors |
+
+---
+
+*Last updated: generated from repository source — always verify answers against actual code before interviews.*
+
+---
+
+## 17. Behavioural / STAR Questions
+
+*Senior engineers in European and Indian companies (FAANG, fintechs, consultancies) always ask 2–4 behavioural questions. Use these prepared answers.*
+
+**Q: Tell me about the hardest technical problem you solved on this project.**
+
+The most challenging part was getting the transaction boundary right in `advanceExecution`. Initially the execution update and all audit events were written in separate database calls. A failure between writes would leave the execution state updated but the audit trail incomplete — an inconsistency that would silently corrupt the audit record. I refactored the repository interface to accept both the updated execution and a list of audit events in a single `updateWithAudit()` method, which wraps everything in one `newSuspendedTransaction` block. If any write fails, the transaction rolls back and the caller gets an error rather than partial data.
+
+> **Simplified:** I had a bug where a crash half-way through could leave the database half-updated. The fix was to wrap both writes in a single database transaction so they succeed or fail together — atomicity.
+
+**Q: Tell me about a time you had to make a trade-off you weren't entirely happy with.**
+
+For the frontend auth cookie I set `httpOnly: false`. The current design requires client-side JavaScript to read the token for GraphQL requests — but `httpOnly: true` cookies are inaccessible to JS. A more secure design has Next.js API routes read the cookie server-side and inject the Bearer token before proxying; the browser JS never sees the raw token. That pattern is strictly required for production, and I would implement it before any real user traffic. I chose the pragmatic path for the demo to avoid refactoring all of the custom `useGraphql` hooks mid-project, and I documented the risk explicitly in `docs/local-run.md` and in the code comment. This trade-off must **never** be carried into production — `httpOnly: false` exposes the authentication token to XSS attacks.
+
+> **Simplified:** I took a security shortcut that is acceptable for a local demo only — `httpOnly: false` means an XSS script could steal the auth token. I know exactly what needs to change before production (server-side cookie reads), why (eliminate XSS exposure), and I documented it. Never acceptable in a live environment.
+
+**Q: Tell me about a time you had to explain a complex technical decision to a non-engineer.**
+
+When scoping the service split between definition-service and execution-service, the product owner initially asked "why not just one service?" I explained it using the analogy of a library system: the library catalogue (definition-service) contains the rules that never change mid-visit; the borrowing desk (execution-service) is where the action happens and needs to scale based on demand. You wouldn't bring the whole catalogue to every borrowing transaction, but you might need extra staff at the desk during peak hours. This made the horizontal scaling and release independence rationale intuitive.
+
+> **Simplified:** I turned a microservices architecture decision into a library analogy. Preparation tip: always have a plain-English analogy for every technical decision.
+
+**Q: What would you do differently if you started this project today?**
+
+1. **Idempotency keys** from day one — the current `startExecution` mutation can create duplicate executions if the client retries on a network failure. Adding an `idempotencyKey` to `StartExecutionInput` and checking it before creating would prevent this.
+2. **Distributed locking** before adding a second execution-service replica — currently two pods can race on `advanceExecution` for the same execution ID.
+3. **Asymmetric JWT** (RS256) — the current HMAC-SHA256 means both the web layer (signer) and backend services (verifiers) share the same secret. With RS256, only the web layer has the private key; backends use the public key. This limits blast radius if a service is compromised.
+4. **MSW (Mock Service Worker) for all API tests** — the web test suite uses MSW inconsistently. Standardising would make test coverage more reliable.
+
+> **Simplified:** Four honest improvements: idempotency, distributed locking, asymmetric JWT, and better API mocking in tests. Showing you know the gaps in your own code impresses senior engineers more than pretending everything is perfect.
+
+**Q: How do you handle disagreement with a senior engineer on a technical approach?**
+
+I document both positions — mine and theirs — with explicit trade-offs and ask them to review. On this project, I prototyped two approaches for the cache strategy: a pure Redis approach vs. the two-level Caffeine+Redis approach. I wrote a short design note showing the latency difference (Redis P99 ~5ms vs. in-process ~0.01ms for hot-path lookups) and the operational trade-off (more memory per pod vs. Redis cost). The choice to use both was data-driven rather than opinion-driven.
+
+> **Simplified:** Back your position with data/prototypes, document trade-offs, and let the decision be objective. Avoid making technical disagreements personal.
+
+---
+
+## 18. Live Coding & Whiteboard Questions
+
+*A senior engineer may ask you to code or design something on the spot. These are the most likely ones given this codebase.*
+
+**Q: Walk me through how you would add a new policy operator `REGEX`.**
+
+1. **`Operator.java`** — add `REGEX` to the enum.
+2. **`PolicyEvaluator.java`** — add a `case REGEX` to the switch expression:
+   ```java
+   case REGEX -> {
+       boolean matches = contextValueStr.matches(expectedValue);
+       if (!matches) {
+           explanation.append("Field '").append(field).append("' value '")
+               .append(contextValueStr).append("' does not match pattern '")
+               .append(expectedValue).append("'. ");
+       }
+       yield matches;
+   }
+   ```
+3. **`PolicyEvaluatorTest.java`** — add a test case with a regex pattern.
+4. **`schema.graphqls`** — no change needed (operators are string values in the GraphQL input, e.g. `operator: "REGEX"`).
+5. **Migration** — no schema change needed (operator stored as a string in the JSONB conditions column).
+
+The sealed type and switch expression mean the compiler will flag any new enum value not handled in the switch — a compile error, not a runtime bug.
+
+> **Simplified:** Add enum value → add switch case → add test. The compiler guarantees you haven't missed any switch case. No schema migration needed because operators are stored as plain strings.
+
+**Q: How would you add rate limiting to the Next.js API routes?**
+
+The cleanest approach is to add an `upstash/ratelimit` or similar edge-compatible rate limiter in `middleware.ts`. For each request, derive a rate limit key (the user's JWT `sub` claim or their IP), check the limiter, and return `429 Too Many Requests` if exceeded. Alternatively, an NGINX Ingress annotation (`nginx.ingress.kubernetes.io/limit-rps`) at the Kubernetes layer can rate-limit without touching application code. I would prefer the Ingress annotation for simple global limits and the application-level limiter for per-user quotas.
+
+> **Simplified:** Two options: (1) Application code in `middleware.ts` — flexible, per-user limits. (2) NGINX Ingress annotation — zero code, global limit per IP. Use (2) first, add (1) if you need user-level quotas.
+
+**Q: How would you implement distributed locking to fix the `advanceExecution` race condition?**
+
+Two options in this stack:
+
+**Option A — Redlock (Redis):**
+Before calling `findById` in `advanceExecution`, acquire a Redis lock with key `lock:execution:{executionId}` and TTL 5 seconds. If lock acquisition fails (another pod holds it), return a `CONFLICT` error. On success, proceed with the execution logic, then release the lock in a `finally` block.
+
+**Option B — PostgreSQL advisory lock:**
+Use `SELECT pg_try_advisory_xact_lock(hash({executionId}))` inside the Exposed transaction in `updateWithAudit`. This is an exclusive lock scoped to the transaction — automatic release on commit/rollback, no TTL risk.
+
+I would choose Option B as it uses an already-provisioned dependency (PostgreSQL) and the lock lifecycle is managed by the database transaction automatically.
+
+> **Simplified:** Option A uses Redis (external distributed lock). Option B uses PostgreSQL's built-in advisory lock feature. I'd choose B because we already have PostgreSQL and the lock releases automatically with the transaction — no "what if the pod crashes before releasing" problem.
+
+**Q: How would you add real-time execution state updates (WebSocket/SSE)?**
+
+The simplest path in this stack is **Server-Sent Events (SSE)** on the Next.js layer:
+1. Add a new Ktor route `GET /executions/{id}/stream` in execution-service that opens a Ktor `sse { }` block and polls `executionRepository.findById(id)` every 1 second until status is terminal, sending a JSON event on each state change.
+2. The Next.js API route proxies the SSE stream to the browser.
+3. The frontend React component subscribes with `EventSource`.
+
+**Why SSE over WebSockets?** SSE is unidirectional (server→client only, which is what we need), works over HTTP/1.1, and does not require a separate WS handshake. WebSockets would be overkill for read-only state updates.
+
+> **Simplified:** SSE = server pushes updates to browser over a long-lived HTTP connection. Simpler than WebSockets because the browser never needs to send data back — it just listens. Add a polling loop on the server side that sends an event every time the state changes.
+
+**Q: A workflow execution is stuck. How would you debug it?**
+
+1. **Correlation ID** — find the `X-Correlation-ID` from the original request (from the browser network tab or API client).
+2. **Jaeger** — search for traces by the correlation ID. The trace tree shows every span: HTTP request → `ExecutionEngine.advanceExecution` → `grpc.getWorkflow` → `policy.evaluate`. Look for long-duration or error spans.
+3. **Audit trail** — call `getAuditTrail(executionId)` via GraphQL. This shows every event in order: `EXECUTION_STARTED`, `POLICY_EVALUATED` (with `allowed=false` and `explanation`), etc.
+4. **Metrics** — check `execution.failed.total` and `grpc.client.request.duration` P99 in Grafana.
+5. **Logs** — grep for the correlation ID in structured JSON logs (`logger.info` calls include MDC with the correlation ID).
+
+> **Simplified:** Five tools in order: (1) Correlation ID to tie everything together, (2) Jaeger to see the full request trace, (3) audit trail to see the business-level history, (4) Grafana metrics for patterns, (5) raw logs for anything the trace missed.
+
+---
+
+## 19. Senior-Engineer Depth Questions
+
+*These are the questions designed to find the ceiling of your knowledge.*
+
+**Q: What is the Kubernetes production readiness checklist for this stack?**
+
+| Item | Status in this repo |
+|---|---|
+| Health probes (`readinessProbe`, `livenessProbe`) | ✅ Defined in Helm deployment templates |
+| Non-root container user | ✅ `runAsNonRoot: true, runAsUser: 1000` in `securityContext` |
+| Drop all Linux capabilities | ✅ `capabilities.drop: [ALL]` |
+| `allowPrivilegeEscalation: false` | ✅ Set in container securityContext |
+| Resource `limits` and `requests` | ✅ Defined in `values.yaml` (500m/512Mi limits, 250m/256Mi requests) |
+| Horizontal Pod Autoscaler | ✅ `hpa.yaml` — CPU target 70%, min/max replicas per service |
+| PodDisruptionBudget | ✅ `pdb.yaml` — `minAvailable: 1` for all three deployments |
+| Network Policies (default deny) | ✅ `networkpolicy.yaml` — default deny-all, explicit allow-list per service |
+| Pod anti-affinity | ✅ `preferredDuringSchedulingIgnoredDuringExecution` on hostname — spread replicas across nodes |
+| RBAC — least privilege ServiceAccount | ✅ `serviceaccount.yaml` — dedicated SA per service, `rbac.yaml` limits to ConfigMap/Secret reads |
+| Secret management | ⚠️ Secrets in Kubernetes Secrets (base64, not encrypted at rest without additional setup). Key Vault provisioned in Terraform — integration pending |
+| Ingress TLS | ⚠️ `ingress.tls.enabled: false` by default — cert-manager integration pending |
+| Image tag pinning | ⚠️ `tag: latest` in default values — always override in env values files |
+
+> **Simplified:** Most production safety checks are in place (non-root, resource limits, HPA, PDB, network policies, anti-affinity). The remaining gaps are: TLS on ingress, proper secret encryption at rest via Key Vault, and never using `latest` image tags.
+
+**Q: What does PodDisruptionBudget `minAvailable: 1` actually protect against?**
+
+A PodDisruptionBudget (PDB) tells Kubernetes: "during voluntary disruptions (e.g., node drain for maintenance, rolling update), always keep at least 1 pod running for this deployment." Without a PDB, a node drain could evict all pods of a deployment at once, causing downtime. With `minAvailable: 1` and 2 replicas, Kubernetes will drain at most 1 pod at a time — it waits for a replacement pod to be Running before evicting the next. This only applies to voluntary disruptions; PDBs do not protect against node failures (involuntary disruptions).
+
+> **Simplified:** PDB prevents zero-downtime from being broken during planned maintenance. If you're draining a Kubernetes node to update it, PDB says "don't evict this pod until a replacement is healthy." Without it, all pods could be evicted simultaneously during a node drain.
+
+**Q: What is the NetworkPolicy architecture and why does it matter?**
+
+`networkpolicy.yaml` implements a deny-all-by-default model with explicit allowlists:
+
+| Traffic | Allowed? |
+|---|---|
+| web → definition-service:8081 (HTTP/GraphQL) | ✅ |
+| web → execution-service:8082 (HTTP/GraphQL) | ✅ |
+| execution-service → definition-service:9090 (gRPC) | ✅ |
+| definition-service → execution-service (any port) | ❌ Blocked |
+| execution-service → web (any port) | ❌ Blocked |
+| definition-service / execution-service → PostgreSQL:5432 | ✅ (external IP via `ipBlock`) |
+| execution-service → Redis:6379 | ✅ (external IP via `ipBlock`) |
+| All → OTel collector:4317 | ✅ |
+| All → kube-dns:53 | ✅ |
+
+This enforces the service dependency graph at the network layer. Even if a service is compromised, it cannot reach services it has no business talking to.
+
+> **Simplified:** NetworkPolicy is a firewall inside Kubernetes. Even if an attacker gets code execution in one pod, they can't reach any other pod they're not supposed to. execution-service can talk to definition-service (it needs to) but definition-service can't initiate calls to execution-service. It's least-privilege at the network level.
+
+**Q: What are the Prometheus alert rules and what do they monitor?**
+
+| Alert | Condition | Severity |
+|---|---|---|
+| `ServiceDown` | `up{job=~"..."}==0` for 2m | critical |
+| `HighErrorRate` | >5% HTTP 5xx rate over 5m | warning |
+| `HighLatency` | HTTP P95 > 1s for 10m | warning |
+| `GrpcHighLatency` | gRPC P95 > 500ms for 5m | warning |
+| `HighCPUUsage` | >80% CPU for 10m | warning |
+| `HighMemoryUsage` | >400MB RSS for 10m | warning |
+| `DatabaseConnectionPoolExhausted` | HikariCP active/max > 90% for 5m | critical |
+| `ExecutionHighFailureRate` | `failed/started > 10%` for 5m | warning |
+| `CacheHitRateLow` | cache hit rate < 50% for 10m | info |
+| `PodRestartingFrequently` | restart rate > 0.1/min for 5m | warning |
+
+`DatabaseConnectionPoolExhausted` is critical because it immediately blocks all new database operations. `ServiceDown` is critical because the entire feature is unavailable. The `CacheHitRateLow` alert (info severity) is an early warning that definition-service is being hit harder than expected.
+
+> **Simplified:** Alerts cover the four golden signals: latency (`HighLatency`, `GrpcHighLatency`), traffic (implied by `HighErrorRate`), errors (`HighErrorRate`, `ExecutionHighFailureRate`), and saturation (`HighCPUUsage`, `HighMemoryUsage`, `DatabaseConnectionPoolExhausted`). Every alert has a `for` clause to avoid false positives from brief spikes.
+
+**Q: How would you handle a zero-downtime Flyway migration that drops a column?**
+
+Never drop a column in a single deployment step. Use a three-phase approach:
+
+1. **Phase 1 (current release)**: Add a new migration that marks the column as deprecated in code (stop writing to it, but still read it). Deploy. Both old and new code runs safely.
+2. **Phase 2 (next release)**: Stop reading the column in application code. Deploy. The column exists but is ignored.
+3. **Phase 3 (later release)**: Add a Flyway migration that does `ALTER TABLE ... DROP COLUMN`. Deploy. Since no code references the column, there is no risk.
+
+This matters because Flyway runs before the application starts (`on startup`), but during a rolling update, old pods are still running while the migration is already applied. If you drop a column and the old code tries to `SELECT` it, the old pods will crash.
+
+> **Simplified:** Rolling deployments mean old code and new schema coexist briefly. If you drop a column that old code still reads, old pods crash. The fix: stop using the column in code first (Phase 1+2), then drop it (Phase 3). Three deploys, zero downtime.
+
+**Q: How does the multi-stage Docker build work and why does it matter?**
+
+Each service uses a two or four-stage `FROM ... AS ...` Dockerfile:
+
+**definition-service (2 stages):**
+1. `FROM maven:3.9.9-eclipse-temurin-21 AS build` — full JDK + Maven, compiles and packages the JAR (`-DskipTests`).
+2. `FROM eclipse-temurin:21-jre-alpine` — only JRE, copies the pre-built JAR. Final image is ~170MB vs. ~600MB with the full build image.
+
+**execution-service (2 stages):**
+1. `FROM gradle:8.8-jdk21 AS build` — full JDK + Gradle, runs `installDist` (creates runnable script + deps directory).
+2. `FROM eclipse-temurin:21-jre-alpine` — copies the dist folder. 
+
+**web (4 stages):**
+1. `deps` — install all npm dependencies (cached layer).
+2. `builder` — run `npm run build` with full devDependencies.
+3. `prod-deps` — install only production dependencies (`--omit=dev`).
+4. `runner` — Node.js slim image, copies only `.next`, `node_modules`, `public`, and `resources`. No source code, no devDependencies in the final image.
+
+All images run as a non-root user (`addgroup -S app && adduser -S app -G app`) and expose only the necessary port. The `HEALTHCHECK` instruction means Docker (and Kubernetes) can detect unhealthy containers at the container level, before Kubernetes probes.
+
+> **Simplified:** Multi-stage builds mean your final Docker image contains only what's needed to run, not the tools to compile it. A Java image with Maven weighs ~600MB; a JRE-only image weighs ~170MB. Smaller images = faster pulls, smaller attack surface. Each stage is a separate `FROM` with a name; only the last stage ends up in the final image.
+
+**Q: Walk me through the full request lifecycle for a call to `advanceExecution` starting from the browser.**
+
+1. **Browser** — React component calls `advanceExecution` mutation via `graphql-request` pointing at `/api/execution-graphql`.
+2. **Next.js middleware** (`middleware.ts`) — checks `auctor.auth.token` cookie. This is a GET check only; POST requests pass through without a token check.
+3. **Next.js API route** (`/api/execution-graphql/route.ts`) — reads the cookie, extracts the Bearer token, forwards the GraphQL payload to `http://execution-service:8082/graphql` with `Authorization: Bearer <token>`.
+4. **Ktor `ContentNegotiation` + `StatusPages`** — parses the request body.
+5. **Ktor `authenticate("auth-executor")`** — Ktor JWT plugin verifies the token (issuer, audience, expiry, signature). `AuthContextPlugin` extracts `email` and `roles` into `call.attributes`.
+6. **`GraphQLProvider.kt`** — routes the GraphQL mutation to the `advanceExecution` data fetcher.
+7. **`ExecutionEngine.advanceExecution()`** — loads execution from DB, fetches workflow via gRPC (or cache), evaluates policy via gRPC, updates state, writes audit events — all in one `updateWithAudit` transaction.
+8. **gRPC call** — `DefinitionGrpcClient` propagates the Bearer token in gRPC metadata. `JwtGrpcInterceptor` in definition-service verifies it again (defence in depth).
+9. **Response** — JSON result flows back: execution-service → Next.js route → browser. OTel spans are closed; the full trace appears in Jaeger.
+
+> **Simplified:** Browser → Next.js middleware (cookie check) → Next.js proxy (token injection) → Ktor (JWT verify) → ExecutionEngine (load/evaluate/persist) → gRPC to definition-service (token re-verified) → database → response back through the same chain. Two JWT verifications: once at the HTTP layer, once at the gRPC layer.
+
+**Q: What is the CAP theorem and where does this system sit?**
+
+CAP theorem says a distributed system can guarantee at most two of: Consistency, Availability, Partition Tolerance. In practice, network partitions are unavoidable, so the real choice is CP (consistent under partition, may be unavailable) vs. AP (available under partition, may return stale data).
+
+- **definition-service** sits on **CP** — PostgreSQL with synchronous writes. If the database is partitioned, definition-service will reject writes rather than serve stale definitions. Correct definitions are more important than availability.
+- **execution-service cache** sits on **AP** for reads — if Redis is partitioned, the cache degrades gracefully to direct gRPC calls (available but potentially slower). The authoritative state (PostgreSQL) is still CP.
+- The overall system is **CP for writes, AP for cached reads**.
+
+> **Simplified:** CP means "I'd rather return an error than return wrong data." AP means "I'd rather return possibly stale data than return an error." For workflow definitions (immutable, correctness-critical), CP. For the cache layer (just a performance optimisation), AP — if it's wrong, the next request bypasses it.
+
+**Q: How would you add SAML/SSO support to replace Google Sign-In?**
+
+Only `web/app/api/auth/google/route.ts` needs to change — it is the only place that touches Google's JWKS endpoint. The rest of the platform only ever sees the platform JWT.
+
+1. Replace the `jwtVerify(...jwks)` step with a SAML assertion validation step (e.g., using `node-saml`).
+2. Extract `email` and `subject` from the SAML assertion attributes instead of the Google JWT payload.
+3. The `buildRoles`, `signJwt`, and cookie-setting logic are identical.
+4. Update `lib/admins.ts` to match the email format from the IdP.
+
+No backend service changes needed — definition-service and execution-service only validate the platform JWT. This demonstrates ADR-008's rationale: bridging at the edge keeps the auth boundary in one place.
+
+> **Simplified:** Because the Google verification is isolated to one 70-line file, swapping it for SAML is a one-file change. This is exactly why the design bridges identity providers at the web layer rather than having every backend service talk to Google directly.
+
+**Q: How is the `@EnableMethodSecurity` annotation used and why?**
+
+`@EnableMethodSecurity` on `SecurityConfig.java` activates Spring's method-level security annotations (`@PreAuthorize`, `@PostAuthorize`, `@Secured`). Even though this project currently uses URL-level access control (`requestMatchers`), enabling method security opens the door for fine-grained control like:
+```java
+@PreAuthorize("hasRole('ADMIN')")
+public WorkflowDefinition publish(WorkflowId id) { ... }
+```
+This could enforce that only `ADMIN` users can publish workflows, regardless of which HTTP endpoint (REST or GraphQL) was used to invoke the service method. It is currently unused but architecturally ready.
+
+> **Simplified:** `@EnableMethodSecurity` lets you put security annotations directly on service methods. Even if an attacker bypassed the HTTP layer through a misconfigured endpoint, the method-level check would still fire. Currently unused but the foundation is there.
+
+**Q: What is the `gRPC keep-alive` setting in `application.yml` and why does it matter?**
+
+```yaml
+grpc:
+  server:
+    enable-keep-alive: true
+```
+gRPC connections are long-lived HTTP/2 connections. In a Kubernetes environment, TCP connections sit behind Kubernetes Services and cloud load balancers that may time out idle connections (typically after 60–90 seconds). Without keep-alive, an idle gRPC connection appears live on the client side but is silently closed on the server/load-balancer side. The next RPC attempt gets a `GOAWAY` or immediate EOF and must reconnect, adding latency. `enable-keep-alive: true` enables HTTP/2 PING frames on the server side, which keep the connection active and detect dead connections faster.
+
+> **Simplified:** Kubernetes load balancers silently close idle TCP connections. gRPC keep-alive sends periodic "ping" messages over the connection to keep it alive and detect if it's died. Without it, your gRPC calls randomly fail after idle periods.
+
+**Q: The `publish()` method in `WorkflowService` increments the version AND calls `commandPort.save()`. What does that result in at the database level?**
+
+```java
+WorkflowDefinition publishedWorkflow = workflow
+    .withStatus(new WorkflowStatus.Published())
+    .withVersion(workflow.version() + 1);  // e.g. 1 → 2
+WorkflowDefinition saved = commandPort.save(publishedWorkflow);
+```
+`commandPort.save()` maps to `JpaWorkflowCommandAdapter.save()` which calls `repository.save(entity)`. Since the JPA entity has a composite primary key `(id, version)`, saving `version=2` **inserts a new row** — the original `version=1` (DRAFT) row is never modified. Both rows persist in `workflow_definitions`. The result: `(id, 1, DRAFT)` and `(id, 2, PUBLISHED)` coexist. An execution started on v1 will always fetch v1 via `getByIdAndVersion`; new executions will use v2.
+
+> **Simplified:** `publish()` doesn't update the existing row — it creates a new one with a higher version number. The DRAFT row is never touched. This is immutable history: both versions are permanently queryable.
+
+**Q: What invariants does the `WorkflowDefinition` constructor enforce?**
+
+```java
+// name must not be blank
+if (name == null || name.isBlank()) throw new IllegalArgumentException(...);
+// states must not be empty
+if (states == null || states.isEmpty()) throw new IllegalArgumentException(...);
+// initialState must be in the states list
+if (initialState == null || !states.contains(initialState)) throw ...;
+// every transition's fromState and toState must be in the states list
+for (Transition t : transitions) {
+    if (!states.contains(t.fromState())) throw ...;
+    if (!states.contains(t.toState()))   throw ...;
+}
+```
+These are domain invariants enforced at construction time — it is impossible to create a `WorkflowDefinition` with a dangling transition reference. This is preferable to validating at the controller or service layer because the invariant is then guaranteed everywhere the object is used, not just where it is created.
+
+> **Simplified:** The constructor acts as a gatekeeper — it's impossible to create an invalid workflow object. This is "make invalid states unrepresentable": if the transition references a state that doesn't exist in the states list, you get an exception at construction time, not a NullPointerException three layers later.
+
+**Q: How does the `@GrpcGlobalServerInterceptor` annotation work and what happens if it throws?**
+
+`@GrpcGlobalServerInterceptor` (from `grpc-spring-boot-starter`) registers the interceptor with every gRPC service in the application — no need to list interceptors on each `@GrpcService`. In `JwtGrpcInterceptor.interceptCall()`, if the JWT is missing or invalid:
+```java
+call.close(Status.UNAUTHENTICATED.withDescription("Missing Authorization header"), new Metadata());
+return new ServerCall.Listener<>() {};
+```
+The call is closed with `UNAUTHENTICATED` before the handler is ever invoked. The empty `Listener` ensures no subsequent callbacks (`onMessage`, `onHalfClose`) fire. The `SecurityContextHolder.clearContext()` in `ForwardingServerCallListener.onComplete()` and `onCancel()` prevents SecurityContext leakage between requests — critical in a virtual-thread or thread-pool model where threads are reused.
+
+> **Simplified:** The interceptor runs before any service method. If the JWT check fails, it closes the connection immediately with `UNAUTHENTICATED` and returns an empty listener — no service code runs. `clearContext()` on complete/cancel ensures the security credentials from one request don't accidentally leak to the next request that reuses the same thread.
 
 ---
 
