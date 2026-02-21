@@ -57,12 +57,14 @@ jobs:
 
   code-quality:
     runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v3.1.0
-        if: ${{ secrets.SONAR_TOKEN != '' }}
+        if: ${{ env.SONAR_TOKEN != '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -71,5 +73,5 @@ jobs:
             -Dsonar.organization=kushal-sharma-works
             -Dsonar.projectKey=kushal-sharma-works_auctor-platform
       - name: SonarCloud Scan skipped
-        if: ${{ secrets.SONAR_TOKEN == '' }}
+        if: ${{ env.SONAR_TOKEN == '' }}
         run: echo "SONAR_TOKEN not set; skipping SonarCloud scan."
