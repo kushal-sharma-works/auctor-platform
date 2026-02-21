@@ -2,6 +2,11 @@
 
 Use this guide to run the Auctor local demo stack on your machine without cloud billing.
 
+## Intentional Demo Tradeoffs
+- This demo profile keeps some security settings intentionally relaxed to reduce setup friction.
+- Authorization is intentionally simplified so users run with `EXECUTOR` role by default in local/demo mode.
+- Treat these as local-only defaults and harden security/authorization for production deployments.
+
 ## Prerequisites
 - Git
 - Docker Desktop (or Docker Engine)
@@ -9,7 +14,7 @@ Use this guide to run the Auctor local demo stack on your machine without cloud 
 - Recommended host capacity: 8 GB RAM, 4 CPU cores, 10 GB free disk
 - Ports free: `3000`, `8081`, `8082`, `5432`, `6379`, `9091`, `3001`, `16686`
 
-## First-time Machine Setup
+## First-Time Machine Setup
 Verify tooling:
 
 ```bash
@@ -18,7 +23,7 @@ docker --version
 docker compose version
 ```
 
-If `docker compose` is not available, install/enable the Compose v2 plugin before continuing.
+If `docker compose` is not available, install or enable the Compose v2 plugin before continuing.
 
 Clone and enter repo:
 
@@ -27,8 +32,18 @@ git clone https://github.com/kushal-sharma-works/auctor-platform.git
 cd auctor-platform
 ```
 
+Create the local UI env file (required for web login/API auth routes):
+
+```bash
+cp web/.env.example web/.env.local
+```
+
+Update `web/.env.local` with your local values before starting the stack, especially:
+- `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_ID`
+
 ## Fastest Start
-From repo root:
+From the repo root:
 
 ```bash
 docker compose up --build

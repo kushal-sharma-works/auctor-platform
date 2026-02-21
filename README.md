@@ -33,11 +33,14 @@ Prerequisites (fresh machine):
 - At least 8 GB RAM available to Docker
 - Ports free: `3000`, `3001`, `5432`, `6379`, `8081`, `8082`, `9091`, `16686`
 
-Create local web env file once:
+Create the local web env file (one-time setup):
 ```bash
 cp web/.env.example web/.env.local
 ```
-Keep `web/.env.local` local-only (do not commit it).
+Keep `web/.env.local` local-only (do not commit).
+Update `web/.env.local` with your UI auth values before the first login, especially:
+- `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_ID`
 
 ```bash
 docker compose up --build
@@ -82,6 +85,11 @@ npm test
 - Versioned immutable definitions for deterministic replay.
 - Split persistence models: JPA for definition, Exposed for execution.
 - Cache layering: Caffeine + Redis for hot paths.
+
+## Intentional Local Defaults
+- Some security controls are intentionally relaxed in local/demo mode to keep setup friction low.
+- In local/demo mode, authorization defaults users to `EXECUTOR` by design.
+- These defaults are for local operation only and should be hardened for production environments.
 
 ## Documentation
 - Architecture and flows: [docs/architecture.md](docs/architecture.md)

@@ -37,6 +37,9 @@ fun initTracing(): OpenTelemetry {
         .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
         .build()
 
-    GlobalOpenTelemetry.set(openTelemetry)
+    try {
+        GlobalOpenTelemetry.set(openTelemetry)
+    } catch (_: IllegalStateException) {
+    }
     return openTelemetry
 }

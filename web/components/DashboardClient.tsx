@@ -177,10 +177,7 @@ export function DashboardClient() {
         </Heading>
         <Stack spacing={4} mt={6}>
           <Text fontSize="lg" color="gray.800">
-            Track workflow approvals and policy updates here once executions are wired.
-          </Text>
-          <Text fontSize="lg" color="gray.700">
-            Execution events will appear after execution-service integration is enabled.
+            Track workflow approvals, policy updates, and execution events here.
           </Text>
         </Stack>
       </Box>

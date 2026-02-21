@@ -1,6 +1,7 @@
 package com.auctor.execution.observability
 
 import io.ktor.server.application.*
+import io.ktor.server.application.hooks.CallFailed
 import io.ktor.util.AttributeKey
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span
@@ -29,10 +30,10 @@ val HttpTracingPlugin = createApplicationPlugin("HttpTracingPlugin") {
         call.attributes.put(scopeKey, scope)
     }
 
-    onCallRespond { call ->
+    fun finishSpan(call: ApplicationCall, statusCode: Int? = null, cause: Throwable? = null) {
         val span = call.attributes.getOrNull(spanKey)
         val scope = call.attributes.getOrNull(scopeKey)
-        val statusCode = call.response.status()?.value
+
         if (span != null) {
             if (statusCode != null) {
                 span.setAttribute("http.status_code", statusCode.toLong())
@@ -40,9 +41,27 @@ val HttpTracingPlugin = createApplicationPlugin("HttpTracingPlugin") {
                     span.setStatus(StatusCode.ERROR)
                 }
             }
+            if (cause != null) {
+                span.recordException(cause)
+                span.setStatus(StatusCode.ERROR)
+            }
             span.end()
+            call.attributes.remove(spanKey)
         }
-        scope?.close()
+
+        if (scope != null) {
+            scope.close()
+            call.attributes.remove(scopeKey)
+        }
+    }
+
+    onCallRespond { call ->
+        val statusCode = call.response.status()?.value
+        finishSpan(call, statusCode = statusCode)
+    }
+
+    on(CallFailed) { call, cause ->
+        finishSpan(call, cause = cause)
     }
 }
 

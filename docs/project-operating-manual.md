@@ -25,7 +25,6 @@ Top-level areas:
 - `infra/helm`: Kubernetes deployment chart
 - `infra/argocd`: GitOps manifests
 - `infra/monitoring`: Prometheus / Grafana / OTel config
-- `scripts`: validation and local test runners
 - `docs`: architecture, decisions, local run, and project operating manual
 
 ## 3) Runtime architecture and request flows
@@ -47,20 +46,20 @@ Top-level areas:
 
 ## 4) Service responsibilities
 
-## 4.1 definition-service
+### 4.1 definition-service
 - Manages policies and workflow definitions
 - Maintains versioned definition records
 - Exposes health/metrics/actuator endpoints
 - Validates JWT for secured interactions
 
-## 4.2 execution-service
+### 4.2 execution-service
 - Starts and advances executions
 - Maintains execution state transitions and audit events
 - Uses gRPC definition lookup + Redis cache
 - Exposes GraphQL and health/metrics endpoints
 - Handles domain-level errors with explicit status mapping to avoid generic 500s
 
-## 4.3 web
+### 4.3 web
 - UI for workflow browsing and execution operations
 - Google sign-in path and app JWT issuance via API routes
 - Proxies API/GraphQL traffic to backend services
@@ -72,7 +71,7 @@ Authentication layers:
 - User identity proof (Google ID token)
 - Application JWT issued by backend/web auth route
 
-Why app JWT still exists with Google login:
+Why an app JWT still exists with Google login:
 - Backend services authorize against internal JWT claims (`issuer`, `audience`, `roles`) expected by platform components
 - Google token proves identity, app token standardizes authorization contract inside system
 
@@ -92,7 +91,7 @@ This supports replayability and compliance-focused evidence collection.
 
 CI/CD highlights:
 - service-specific CI workflows (build/test, docker jobs on configured branches)
-- local build/test flow for repeatable demos
+- local build/test flows for repeatable demos
 
 Infrastructure assets remain in-repo for engineering completeness and future cloud enablement.
 
@@ -111,14 +110,14 @@ Operational intent:
 
 ## 9) Local-first operation (recommended for low-cost demos)
 
-Use local mode for recruiter/demo flows:
+Use local mode for recruiter/demo sessions:
 - `docker compose up --build`
 - Web at `http://localhost:3000`
-- backend services on `8081`, `8082`
+- Backend services on `8081` and `8082`
 
 Why local-first:
 - near-zero cloud cost
-- repeatable and fast demo reset
+- fast, repeatable demo resets
 - no DNS/ingress complexity required
 
 See: `docs/local-run.md`.
@@ -140,7 +139,7 @@ Platform shows production-minded quality patterns:
 - structured logging and observability stack
 - security context defaults and least-privilege direction
 - infrastructure-as-code and environment overlays
-- local-first runbooks and validation scripts
+- local-first runbooks and repeatable local test commands
 
 ## 12) Decision rationale (condensed)
 
@@ -154,7 +153,7 @@ Key deliberate choices:
 
 ## 13) Safe cleanup policy used in this repo
 
-Policy applied for cleanup tasks:
+Cleanup policy applied in this repo:
 - Do **not** remove infra by default
 - Do **not** remove gitignored/generated files unnecessarily
 - Remove only explicit user-requested or clearly obsolete tracked artifacts
@@ -197,4 +196,3 @@ For deeper topic-specific details, also read:
 - `docs/architecture.md`
 - `docs/decisions.md`
 - `docs/local-run.md`
-- `docs/project-operating-manual.md`

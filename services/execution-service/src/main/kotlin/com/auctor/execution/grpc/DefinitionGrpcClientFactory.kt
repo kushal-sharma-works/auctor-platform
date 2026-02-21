@@ -8,6 +8,8 @@ import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.instrumentation.grpc.v1_6.GrpcTelemetry
 
 object DefinitionGrpcClientFactory {
+    private val otelClientInterceptor =
+        GrpcTelemetry.create(GlobalOpenTelemetry.get()).newClientInterceptor()
 
     fun create(authContext: AuthContext): DefinitionServiceGrpc.DefinitionServiceBlockingStub {
         val channel =
@@ -19,7 +21,7 @@ object DefinitionGrpcClientFactory {
             ClientInterceptors.intercept(
                 channel,
                 AuthGrpcClientInterceptor(authContext),
-                GrpcTelemetry.create(GlobalOpenTelemetry.get()).newClientInterceptor()
+                otelClientInterceptor
             )
 
         return DefinitionServiceGrpc.newBlockingStub(interceptedChannel)

@@ -17,7 +17,7 @@ class MetricsRouteTest {
 
     @Test
     fun `metrics endpoint exposes prometheus format`() = testApplication {
-        val registry = SimpleMeterRegistry() // PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+        val registry = SimpleMeterRegistry()
         val metrics = ExecutionMetrics(registry)
         metrics.recordExecutionStarted()
 
@@ -29,8 +29,7 @@ class MetricsRouteTest {
         val body = response.bodyAsText()
 
         assertEquals(HttpStatusCode.OK, response.status)
-        // TODO: Re-enable when Prometheus is properly configured
-        // assertTrue(body.contains("execution_started_total"))
-        // assertTrue(body.contains("# TYPE execution_started_total counter"))
+        assertTrue(body.contains("# TYPE execution_started_total counter"))
+        assertTrue(body.contains("execution_started_total"))
     }
 }

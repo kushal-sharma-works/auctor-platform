@@ -21,14 +21,13 @@ npm run dev
 Open `http://localhost:3000`.
 
 ## Required Environment Variables
-See `.env.example` for full list. Required for normal local flow:
+See `.env.example` for the full list. Required for the standard local flow:
 - `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_ID`
-- `AUCTOR_JWT_SECRET`
-- `AUCTOR_JWT_ISSUER`
-- `AUCTOR_JWT_AUDIENCE`
 - `DEFINITION_SERVICE_URL`
 - `EXECUTION_SERVICE_URL`
+
+JWT-related values are already provided in `.env.example` for local usage. Keep them unchanged unless you intentionally coordinate matching auth configuration across web and backend services.
 
 ## Tests
 ```bash
@@ -37,4 +36,5 @@ npm test
 
 ## Notes
 - For full platform run, use root `docker compose up --build`.
-- `ENABLE_DEV_LOGIN` defaults to `false` unless explicitly set to `true`.
+- Dev login is off by default and can be enabled with `ENABLE_DEV_LOGIN=true` for local-only testing.
+- `.env.example` also includes `NEXT_PUBLIC_ENABLE_DEV_LOGIN` for compatibility with UI-side toggles.

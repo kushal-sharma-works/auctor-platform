@@ -60,7 +60,7 @@ jobs:
         working-directory: services/definition-service
         run: docker build -t auctor/definition-service:${{ github.sha }} .
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.30.0
         with:
           image-ref: auctor/definition-service:${{ github.sha }}
           format: 'sarif'
