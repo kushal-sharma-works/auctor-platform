@@ -1,5 +1,78 @@
 # Auctor Platform — Recruiter & Technical Interview Preparation Guide
 
+---
+
+## ⚡ TL;DR — Read This First
+
+### Is this document enough to survive a grilling?
+
+**Yes — with one condition: you must re-read the section for each topic the recruiter mentions, not just skim this summary.**
+
+Here is the honest picture:
+
+| What is covered | Status |
+|---|---|
+| Every "why did you build it this way?" question (architecture, tech stack, protocols) | ✅ Sections 3–6 |
+| Every "explain this code" question (domain logic, patterns, edge cases) | ✅ Sections 4, 5, 11, 14, 15 |
+| Security — auth flow, JWT, gRPC interceptor, XSS risk, CORS | ✅ Section 8, 15, 19 |
+| Database — schema, migrations, transactions, optimistic locking, JSONB | ✅ Sections 7, 14 |
+| Infrastructure — Docker, Kubernetes, Terraform, Helm, Argo CD | ✅ Sections 10, 19 |
+| Observability — OTel traces, Prometheus metrics, Grafana, alerts | ✅ Sections 9, 19 |
+| Testing — unit, integration, gRPC mock server, Testcontainers | ✅ Section 13 |
+| Behavioural / STAR ("tell me about a bug, a trade-off, a disagreement") | ✅ Section 17 |
+| Live coding ("add this feature", "fix this bug") | ✅ Section 18 |
+| Senior depth ("CAP theorem", "zero-downtime migration", "production readiness") | ✅ Section 19 |
+| File-by-file explanation of every source file | ✅ Section 16 |
+
+### Known gaps to keep in mind
+
+- `httpOnly: false` cookie — **document framing:** demo only, production-unsafe (explained in Sections 8 and 17).
+- `Suspended` execution status — not yet triggered by any business logic; it is a forward-looking placeholder (Section 15).
+- `advanceExecution` race condition on concurrent requests for the same execution ID — no distributed locking yet (Sections 12 and 18 explain the fix).
+- VIEWER role is defined but never assigned through the login flow (Section 15).
+- Middleware only gate-checks GET requests — POST mutations bypass the token check at the middleware layer (covered in full request lifecycle, Section 19).
+
+---
+
+### 🔥 The 15 Most Likely Grilling Questions — One-Line Answers
+
+> Use these as a warm-up the morning of the interview. Each links to the full answer.
+
+1. **"Why two backend languages?"** → Each language earns its place: Spring/Java for rich ecosystem + JPA; Kotlin/Ktor for coroutine-native async. *(§3)*
+2. **"Explain Hexagonal Architecture."** → Domain in the centre, ports as interfaces, adapters as plug-ins. Domain never imports Spring or JPA. *(§4)*
+3. **"How does your circuit breaker work?"** → AtomicInteger failure counter; after 5 failures, blocks all calls for 30 seconds. *(§5)*
+4. **"Walk me through an `advanceExecution` call."** → Load execution → fetch workflow via gRPC → evaluate policy per transition → persist state + audit in one DB transaction. *(§5)*
+5. **"Why is `httpOnly: false` a problem?"** → XSS can steal the token. Must use `httpOnly: true` + server-side cookie reads in production. *(§8)*
+6. **"How does your JWT flow work?"** → Google verifies user identity → Next.js mints a platform JWT → backend services verify the platform JWT. Google JWKS never touched by backends. *(§8)*
+7. **"What does `publish()` actually do at the DB level?"** → Inserts a **new row** (`id, version+1`) — never updates the existing row. Both versions coexist. *(§19)*
+8. **"How do you avoid losing audit events?"** → `updateWithAudit()` wraps execution update + audit insert in a single Exposed transaction. Atomicity guaranteed. *(§5)*
+9. **"What's missing from this codebase?"** → Idempotency keys, distributed locking, RS256 JWT, `httpOnly: true`. Can explain each fix. *(§12)*
+10. **"How would you do a zero-downtime column drop?"** → Three-phase: (1) stop writing, (2) stop reading, (3) drop. Never in one deploy. *(§19)*
+11. **"What is your two-level cache?"** → L1 = Caffeine (in-process, nanoseconds), L2 = Redis (shared, milliseconds), L3 = gRPC (fallback). Redis failure degrades gracefully. *(§5)*
+12. **"How does gRPC auth work?"** → Execution-service attaches `Authorization: Bearer <token>` in gRPC metadata. `JwtGrpcInterceptor` in definition-service verifies it and sets `SecurityContextHolder`. *(§4, §8)*
+13. **"What is structured concurrency and why does `CancellationException` need to be re-thrown?"** → Coroutines form a parent-child tree. Swallowing `CancellationException` breaks timeout propagation; the parent scope never knows the child was cancelled. *(§5)*
+14. **"Tell me about a hard bug."** → `advanceExecution` wrote execution state and audit events in separate DB calls. A crash between them left partial data. Fixed by wrapping both in one transaction. *(§17)*
+15. **"Your Kubernetes production readiness — what's missing?"** → TLS on ingress, Key Vault integration for secret rotation, never use `latest` image tag in production. Everything else (HPA, PDB, NetworkPolicy, non-root, resource limits) is in place. *(§19)*
+
+---
+
+### 📋 30-Minute Pre-Interview Warm-Up Checklist
+
+Do this the morning of the interview:
+
+- [ ] Re-read §3 (Architecture) — be ready to draw the service diagram on a whiteboard
+- [ ] Re-read §4 (definition-service) — know the Hexagonal Architecture layer names cold
+- [ ] Re-read §5 (execution-service) — trace through `advanceExecution` step by step out loud
+- [ ] Re-read §8 (Auth) — Google → platform JWT → service verification chain
+- [ ] Re-read §17 (STAR) — speak the "hardest bug" answer aloud once; it should feel natural
+- [ ] Re-read §18 (Live Coding) — know the 5-step debug walkthrough and the distributed locking options
+- [ ] Re-read §19, "full request lifecycle" — practice saying all 9 hops without the document
+- [ ] Open the actual `ExecutionEngine.kt` file and trace `advanceExecution` in the code once
+- [ ] Open `DefinitionGrpcClient.kt` and find the circuit breaker counters — know the numbers (5 failures, 30s)
+- [ ] Have one sentence ready for **every gap** (race condition, httpOnly, VIEWER role) — interviewers respect candidates who know their own weaknesses
+
+---
+
 This document prepares you for every question a European or Indian recruiter — or the senior engineers behind them — might ask about this project. It assumes a candidate profile of **5–6 years of experience** targeting a **Senior Software Engineer** role. Questions are grouped from softest ("tell me about yourself") to hardest ("walk me through thread safety in your cache strategy"). Each question is followed by a ready-to-deliver answer grounded entirely in the actual code.
 
 ---
