@@ -1,22 +1,22 @@
 # Definition Service
 
-A Spring Boot service that owns policy and workflow definitions for the Auctor platform. It exposes REST and gRPC APIs, persists versioned definitions in PostgreSQL, and provides deterministic, auditable behavior suitable for compliance-focused systems.
+A Spring Boot service that owns policy and workflow definitions for the Auctor platform. It exposes GraphQL and gRPC APIs, persists versioned definitions in PostgreSQL, and provides deterministic, auditable behavior suitable for compliance-focused systems.
 
 ## Highlights
 - Clean architecture separation: API layer, domain model, application services, and persistence adapters.
 - Versioned definitions: publish creates a new version and preserves immutable history.
 - Explicit domain validation for consistent, deterministic behavior.
 - Flyway-managed schema with JSONB for flexible, structured conditions and transitions.
-- REST for CRUD and lifecycle; gRPC for cross-service consumption.
+- GraphQL for CRUD/lifecycle operations; gRPC for cross-service consumption.
 
 ## Architecture at a Glance
 
 Layers and flow (left to right):
 
-Client -> REST/gRPC API -> Domain Services -> Ports -> JPA Adapters -> PostgreSQL
+Client -> GraphQL/gRPC API -> Domain Services -> Ports -> JPA Adapters -> PostgreSQL
 
 Key packages:
-- API (REST): [services/definition-service/src/main/java/com/auctor/definition/api/rest](services/definition-service/src/main/java/com/auctor/definition/api/rest)
+- API (GraphQL): [services/definition-service/src/main/java/com/auctor/definition/api/graphql](services/definition-service/src/main/java/com/auctor/definition/api/graphql)
 - API (gRPC): [services/definition-service/src/main/java/com/auctor/definition/grpc](services/definition-service/src/main/java/com/auctor/definition/grpc)
 - Domain model: [services/definition-service/src/main/java/com/auctor/definition/domain/model](services/definition-service/src/main/java/com/auctor/definition/domain/model)
 - Domain services: [services/definition-service/src/main/java/com/auctor/definition/domain/service](services/definition-service/src/main/java/com/auctor/definition/domain/service)
@@ -53,10 +53,10 @@ Example behavior:
 - Query latest -> returns version 2.
 - Query version 1 -> returns original DRAFT.
 
-## Code Flow (REST)
+## Code Flow (GraphQL)
 
 Create policy
-1. Controller validates request and maps DTO to domain.
+1. GraphQL controller validates input and maps DTO to domain.
 2. PolicyService builds a new PolicyDefinition with a UUID and DRAFT status.
 3. JpaPolicyCommandAdapter persists via DomainMapper.
 4. Response is mapped back to a DTO.
@@ -83,19 +83,14 @@ Notes
 
 ## Error Handling
 
-All REST errors return RFC 7807 ProblemDetail responses:
-- 400 for validation and illegal arguments.
-- 404 for missing resources.
-- 409 for optimistic locking conflicts.
-- 500 for unexpected errors.
+GraphQL errors are mapped from domain/application exceptions through the GraphQL exception resolver.
 
-See [services/definition-service/src/main/java/com/auctor/definition/api/rest/exception/GlobalExceptionHandler.java](services/definition-service/src/main/java/com/auctor/definition/api/rest/exception/GlobalExceptionHandler.java).
+See [services/definition-service/src/main/java/com/auctor/definition/api/graphql/GraphQLExceptionHandler.java](services/definition-service/src/main/java/com/auctor/definition/api/graphql/GraphQLExceptionHandler.java).
 
 ## API Surface
 
-REST endpoints
-- Policies: POST /api/v1/policies, GET /api/v1/policies, GET /api/v1/policies/{id}, GET /api/v1/policies/{id}/versions/{version}, POST /api/v1/policies/{id}/publish
-- Workflows: POST /api/v1/workflows, GET /api/v1/workflows, GET /api/v1/workflows/{id}, GET /api/v1/workflows/{id}/versions/{version}, POST /api/v1/workflows/{id}/publish
+GraphQL endpoint
+- POST `/graphql` with policy/workflow queries and mutations.
 
 gRPC endpoints
 - GetPolicy, GetWorkflow, EvaluatePolicy
@@ -114,15 +109,15 @@ Run the service
 - cd services/definition-service
 - mvn spring-boot:run
 
-Run REST API tests
-- cd api-tests/definition-service
-- bash test-definition-api.sh
+Run service tests
+- cd services/definition-service
+- mvn test
 
 ## Testing Strategy
 
 - Unit tests for domain and mappers.
-- Integration tests for REST controllers and JPA adapters.
-- API test script that records request and response for all REST endpoints.
+- Integration tests for GraphQL flows and JPA adapters.
+- API-level tests for policy/workflow lifecycle and validation behavior.
 
 ## Why this is a strong engineering artifact
 
@@ -130,4 +125,4 @@ Run REST API tests
 - Immutable domain objects with explicit validation and reproducible behavior.
 - Versioned persistence strategy aligned with auditability and compliance.
 - Minimal framework leakage across layers for long-term maintainability.
-- Both REST and gRPC interfaces for diverse client integrations.
+- GraphQL + gRPC interfaces for UI and service-to-service integrations.

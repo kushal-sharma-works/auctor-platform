@@ -82,7 +82,7 @@ class PolicyConditionTest {
     @Test
     void shouldHandleAllOperators() {
         for (Operator operator : Operator.values()) {
-            PolicyCondition condition = new PolicyCondition("field", operator, "value");
+            PolicyCondition condition = new PolicyCondition("field", operator, valueForOperator(operator));
             assertEquals(operator, condition.operator());
         }
     }
@@ -184,6 +184,25 @@ class PolicyConditionTest {
         // Then
         assertEquals("99.99", condition.value());
     }
+
+    @Test
+    void shouldRejectNonNumericValuesForNumericOperators() {
+        assertThrows(IllegalArgumentException.class, () ->
+            new PolicyCondition("delivery", Operator.LT, "7 Days")
+        );
+
+        assertThrows(IllegalArgumentException.class, () ->
+            new PolicyCondition("amount", Operator.GT, "one-hundred")
+        );
+
+        assertThrows(IllegalArgumentException.class, () ->
+            new PolicyCondition("score", Operator.GTE, "10x")
+        );
+
+        assertThrows(IllegalArgumentException.class, () ->
+            new PolicyCondition("threshold", Operator.LTE, "<=5")
+        );
+    }
     
     @Test
     void shouldHandleNegativeNumbers() {
@@ -192,5 +211,13 @@ class PolicyConditionTest {
         
         // Then
         assertEquals("-100", condition.value());
+    }
+    
+    private String valueForOperator(Operator operator) {
+        return switch (operator) {
+            case GT, LT, GTE, LTE -> "10";
+            case IN, NOT_IN -> "A,B";
+            default -> "value";
+        };
     }
 }

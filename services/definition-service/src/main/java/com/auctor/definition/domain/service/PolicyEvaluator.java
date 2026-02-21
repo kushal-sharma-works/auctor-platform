@@ -1,8 +1,11 @@
 package com.auctor.definition.domain.service;
 
 import com.auctor.definition.domain.model.*;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -10,26 +13,47 @@ import java.util.stream.Collectors;
 /**
  * Service for evaluating policy conditions against a context.
  * Uses pattern matching for operator evaluation.
+ *
+ * Intentional behavior: string operators (EQ, NEQ, IN, NOT_IN) are evaluated
+ * case-insensitively for deterministic matching across clients. Locale.ROOT is
+ * used to avoid locale-dependent casing differences.
  */
 public class PolicyEvaluator {
+
+    private final MeterRegistry meterRegistry;
+    private final Timer evaluationTimer;
+
+    public PolicyEvaluator(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+        this.evaluationTimer = meterRegistry.timer("policy.evaluation.duration");
+    }
     
     /**
      * Evaluate a policy definition against a context.
      * All conditions must pass (AND logic).
      */
     public EvaluationResult evaluate(PolicyDefinition policy, Map<String, Object> context) {
+        Timer.Sample sample = Timer.start(meterRegistry);
         StringBuilder explanation = new StringBuilder();
         
-        for (PolicyCondition condition : policy.conditions()) {
-            boolean conditionPassed = evaluateCondition(condition, context, explanation);
-            
-            if (!conditionPassed) {
-                return new EvaluationResult(false, explanation.toString());
+        try {
+            for (PolicyCondition condition : policy.conditions()) {
+                boolean conditionPassed = evaluateCondition(condition, context, explanation);
+                
+                if (!conditionPassed) {
+                    EvaluationResult result = new EvaluationResult(false, explanation.toString());
+                    meterRegistry.counter("policy.evaluation.total", "result", "denied").increment();
+                    return result;
+                }
             }
+            
+            explanation.append("All conditions passed");
+            EvaluationResult result = new EvaluationResult(true, explanation.toString());
+            meterRegistry.counter("policy.evaluation.total", "result", "allowed").increment();
+            return result;
+        } finally {
+            sample.stop(evaluationTimer);
         }
-        
-        explanation.append("All conditions passed");
-        return new EvaluationResult(true, explanation.toString());
     }
     
     private boolean evaluateCondition(
@@ -50,7 +74,7 @@ public class PolicyEvaluator {
         
         boolean result = switch (condition.operator()) {
             case EQ -> {
-                boolean matches = contextValueStr.equals(expectedValue);
+                boolean matches = contextValueStr.equalsIgnoreCase(expectedValue);
                 if (!matches) {
                     explanation.append("Field '").append(field).append("' value '")
                         .append(contextValueStr).append("' does not equal expected '")
@@ -59,7 +83,7 @@ public class PolicyEvaluator {
                 yield matches;
             }
             case NEQ -> {
-                boolean matches = !contextValueStr.equals(expectedValue);
+                boolean matches = !contextValueStr.equalsIgnoreCase(expectedValue);
                 if (!matches) {
                     explanation.append("Field '").append(field).append("' value '")
                         .append(contextValueStr).append("' should not equal '")
@@ -106,8 +130,9 @@ public class PolicyEvaluator {
             case IN -> {
                 Set<String> allowedValues = Arrays.stream(expectedValue.split(","))
                     .map(String::trim)
+                    .map(value -> value.toLowerCase(Locale.ROOT))
                     .collect(Collectors.toSet());
-                boolean matches = allowedValues.contains(contextValueStr);
+                boolean matches = allowedValues.contains(contextValueStr.toLowerCase(Locale.ROOT));
                 if (!matches) {
                     explanation.append("Field '").append(field).append("' value '")
                         .append(contextValueStr).append("' is not in allowed set ")
@@ -118,8 +143,9 @@ public class PolicyEvaluator {
             case NOT_IN -> {
                 Set<String> disallowedValues = Arrays.stream(expectedValue.split(","))
                     .map(String::trim)
+                    .map(value -> value.toLowerCase(Locale.ROOT))
                     .collect(Collectors.toSet());
-                boolean matches = !disallowedValues.contains(contextValueStr);
+                boolean matches = !disallowedValues.contains(contextValueStr.toLowerCase(Locale.ROOT));
                 if (!matches) {
                     explanation.append("Field '").append(field).append("' value '")
                         .append(contextValueStr).append("' is in disallowed set ")

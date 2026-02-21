@@ -1,0 +1,27 @@
+<configuration>
+    <springProperty scope="context" name="environment" source="ENVIRONMENT" defaultValue="dev"/>
+    
+    <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"service":"definition-service","environment":"${environment}"}</customFields>
+            <timeZone>UTC</timeZone>
+            <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                <maxLength>2048</maxLength>
+            </throwableConverter>
+        </encoder>
+    </appender>
+    
+    <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="JSON_CONSOLE"/>
+    </appender>
+
+    <root level="${LOG_LEVEL:-INFO}">
+        <appender-ref ref="ASYNC" />
+    </root>
+    
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="io.grpc" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+</configuration>

@@ -1,0 +1,75 @@
+name: Security Scan
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 0' # Weekly on Sunday
+
+jobs:
+  dependency-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reset OWASP data cache
+        run: rm -rf dependency-check-data
+      
+      - name: Run OWASP Dependency Check - Java
+        working-directory: services/definition-service
+        run: |
+          mvn org.owasp:dependency-check-maven:check \
+            -DfailBuildOnCVSS=7 \
+            -Ddata.directory=../../dependency-check-data \
+            -DsuppressionFiles=dependency-check-suppressions.xml
+      
+      - name: Run OWASP Dependency Check - Kotlin
+        working-directory: services/execution-service
+        run: |
+          ./gradlew dependencyCheckAnalyze -Dorg.owasp.dependencycheck.data.directory=../../dependency-check-data
+      
+      - name: npm audit - Web
+        working-directory: web
+        run: npm audit --audit-level=critical
+      
+      - name: Upload dependency check results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-reports
+          path: |
+            services/definition-service/target/dependency-check-report.html
+            services/execution-service/build/reports/dependency-check-report.html
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: TruffleHog Secret Scan
+        uses: trufflesecurity/trufflehog@v3
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v3.1.0
+        if: ${{ secrets.SONAR_TOKEN != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=kushal-sharma-works
+            -Dsonar.projectKey=kushal-sharma-works_auctor-platform
+      - name: SonarCloud Scan skipped
+        if: ${{ secrets.SONAR_TOKEN == '' }}
+        run: echo "SONAR_TOKEN not set; skipping SonarCloud scan."

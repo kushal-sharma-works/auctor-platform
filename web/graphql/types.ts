@@ -1,9 +1,10 @@
-export interface Definition {
+export interface Workflow {
   id: string
   name: string
-  description: string
+  version: number
+  states: string[]
 }
 
 export interface GetDefinitionResponse {
-  getDefinition: Definition
+  getWorkflow: Workflow
 }

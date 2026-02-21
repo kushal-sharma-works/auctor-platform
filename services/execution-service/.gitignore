@@ -3,3 +3,12 @@
 
 # Ignore Gradle build output directory
 build
+
+# Ignore Kotlin compilation cache
+.kotlin
+
+# Ignore build artifacts
+META-INF
+
+# Ignore generated bin outputs
+bin/

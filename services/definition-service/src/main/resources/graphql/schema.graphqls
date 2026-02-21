@@ -1,0 +1,86 @@
+type Query {
+    workflow(id: ID!): Workflow
+    workflows(page: Int = 0, size: Int = 20): WorkflowPage!
+    policy(id: ID!): Policy
+    policies(page: Int = 0, size: Int = 20): PolicyPage!
+}
+
+type Mutation {
+    createWorkflow(input: CreateWorkflowInput!): Workflow!
+    publishWorkflow(id: ID!): Workflow!
+    createPolicy(input: CreatePolicyInput!): Policy!
+    publishPolicy(id: ID!): Policy!
+}
+
+type Workflow {
+    id: ID!
+    name: String!
+    version: Int!
+    status: String!
+    states: [String!]!
+    initialState: String!
+    transitions: [Transition!]!
+    createdAt: String!
+    updatedAt: String!
+}
+
+type Transition {
+    fromState: String!
+    toState: String!
+    policyRef: String
+}
+
+type WorkflowPage {
+    content: [Workflow!]!
+    totalElements: Int!
+    totalPages: Int!
+    page: Int!
+    size: Int!
+}
+
+type Policy {
+    id: ID!
+    name: String!
+    version: Int!
+    status: String!
+    conditions: [PolicyCondition!]!
+    createdAt: String!
+}
+
+type PolicyCondition {
+    field: String!
+    operator: String!
+    value: String!
+}
+
+type PolicyPage {
+    content: [Policy!]!
+    totalElements: Int!
+    totalPages: Int!
+    page: Int!
+    size: Int!
+}
+
+input CreateWorkflowInput {
+    name: String!
+    states: [String!]!
+    initialState: String!
+    transitions: [TransitionInput!]!
+}
+
+input TransitionInput {
+    fromState: String!
+    toState: String!
+    policyRef: String
+}
+
+input CreatePolicyInput {
+    name: String!
+    conditions: [PolicyConditionInput!]!
+}
+
+input PolicyConditionInput {
+    field: String!
+    operator: String!
+    value: String!
+}

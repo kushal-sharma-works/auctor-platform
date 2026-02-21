@@ -1,16 +1,24 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: auctor-config
+  name: {{ include "auctor.fullname" . }}-config
+  labels:
+    {{- include "auctor.labels" (dict "context" . "name" "config") | nindent 4 }}
 data:
-  ENVIRONMENT: "{{ .Values.environment | default \"dev\" }}"
-  LOG_LEVEL: "{{ .Values.logLevel | default \"INFO\" }}"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: auctor-secrets
-type: Opaque
-stringData:
-  DATABASE_PASSWORD: "{{ .Values.postgresql.auth.password }}"
-  REDIS_PASSWORD: "{{ .Values.redis.auth.password | default \"\" }}"
+  ENVIRONMENT: "{{ .Values.environment }}"
+  LOG_LEVEL: "{{ .Values.logLevel }}"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "{{ .Values.config.otelExporterEndpoint }}"
+  SPRING_DATASOURCE_URL: "{{ .Values.config.definition.datasourceUrl }}"
+  SPRING_DATASOURCE_USERNAME: "{{ .Values.config.definition.datasourceUser }}"
+  EXECUTION_DB_URL: "{{ .Values.config.execution.dbUrl }}"
+  EXECUTION_DB_USER: "{{ .Values.config.execution.dbUser }}"
+  EXECUTION_GRPC_HOST: "{{ include "auctor.serviceName" (dict "context" . "name" "definition-service") }}"
+  EXECUTION_GRPC_PORT: "{{ .Values.services.definition.grpcPort }}"
+  EXECUTION_REDIS_URL: "{{ .Values.config.execution.redisUrl }}"
+  NEXT_PUBLIC_OTEL_EXPORTER_ENDPOINT: "{{ .Values.config.web.otelExporterEndpoint }}"
+  DEFINITION_SERVICE_URL: "{{ .Values.config.web.definitionServiceUrl }}"
+  EXECUTION_SERVICE_URL: "{{ .Values.config.web.executionServiceUrl }}"
+  GOOGLE_CLIENT_ID: "{{ .Values.config.web.googleClientId }}"
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID: "{{ .Values.config.web.googleClientId }}"
+  DEFINITION_JWT_ISSUER: "{{ .Values.config.definition.jwtIssuer }}"
+  DEFINITION_JWT_AUDIENCE: "{{ .Values.config.definition.jwtAudience }}"

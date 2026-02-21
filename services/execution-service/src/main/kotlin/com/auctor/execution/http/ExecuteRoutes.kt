@@ -1,36 +1,32 @@
 package com.auctor.execution.http
 
-import com.auctor.definition.grpc.v1.GetDefinitionRequest
+import com.auctor.definition.grpc.v1.GetWorkflowRequest
 import com.auctor.execution.grpc.DefinitionGrpcClientFactory
-import com.auctor.execution.security.toAuthContext
-import io.ktor.server.application.*
+import com.auctor.execution.security.authContextOrNull
 import io.ktor.server.auth.*
-import io.ktor.server.auth.jwt.*
+import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 fun Application.executionRoutes() {
 
     routing {
-        authenticate("auth-jwt") {
-
+        authenticate("auth-viewer") {
             get("/execute/{id}") {
-                val principal = call.principal<JWTPrincipal>()
-                    ?: error("JWT principal missing")
-
-                val authContext = principal.toAuthContext()
+                val authContext = call.authContextOrNull()
+                    ?: error("Missing auth context")
 
                 val definitionClient =
                     DefinitionGrpcClientFactory.create(authContext)
 
-                val request = GetDefinitionRequest.newBuilder()
+                val request = GetWorkflowRequest.newBuilder()
                     .setId(call.parameters["id"]!!)
                     .build()
 
-                val response = definitionClient.getDefinition(request)
+                val response = definitionClient.getWorkflow(request)
 
                 call.respondText(
-                    "id=${response.id}, name=${response.name}, desc=${response.description}"
+                    "id=${response.id}, name=${response.name}, version=${response.version}"
                 )
             }
         }

@@ -1,11 +1,11 @@
 package com.auctor.definition.domain.service;
 
 import com.auctor.definition.domain.model.*;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +20,7 @@ class PolicyEvaluatorTest {
     
     @BeforeEach
     void setUp() {
-        evaluator = new PolicyEvaluator();
+        evaluator = new PolicyEvaluator(new SimpleMeterRegistry());
     }
     
     @Test

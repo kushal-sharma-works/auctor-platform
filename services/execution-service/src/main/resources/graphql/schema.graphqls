@@ -1,10 +1,77 @@
 # schema.graphqls
+
 type Query {
-  getDefinition(id: ID!): Definition
+  # Workflow queries
+  getWorkflow(id: ID!, version: Int!): Workflow
+  
+  # Execution queries
+  listExecutions(limit: Int, offset: Int): ExecutionList!
+  getExecution(id: ID!): Execution
+  getAuditTrail(executionId: ID!): [AuditEvent!]!
 }
 
-type Definition {
+type Mutation {
+  # Execution mutations
+  startExecution(input: StartExecutionInput!): Execution!
+  advanceExecution(executionId: ID!, input: AdvanceExecutionInput): Execution!
+}
+
+type Workflow {
   id: ID!
   name: String!
-  description: String
+  version: Int!
+  states: [String!]!
+}
+
+type ExecutionStatus {
+  type: String!
+  reason: String
+}
+
+type Execution {
+  id: ID!
+  workflowId: ID!
+  workflowVersion: Int!
+  currentState: String!
+  status: ExecutionStatus!
+  input: [InputField!]!
+  auditEvents: [AuditEvent!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type InputField {
+  key: String!
+  value: String!
+}
+
+type AuditEvent {
+  id: ID!
+  executionId: ID!
+  eventType: String!
+  actor: String!
+  details: String!
+  timestamp: String!
+}
+
+type ExecutionList {
+  limit: Int!
+  offset: Int!
+  total: Int!
+  items: [Execution!]!
+}
+
+input StartExecutionInput {
+  workflowId: ID!
+  workflowVersion: Int!
+  input: [InputFieldInput!]!
+}
+
+input InputFieldInput {
+  key: String!
+  value: String!
+}
+
+input AdvanceExecutionInput {
+  correlationId: String
 }

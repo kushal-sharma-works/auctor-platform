@@ -138,7 +138,7 @@ class DtoMapperTest {
     void shouldHandleAllOperatorTypes() {
         for (Operator operator : Operator.values()) {
             PolicyConditionRequest request = new PolicyConditionRequest(
-                "test", operator.name(), "value"
+                "test", operator.name(), valueForOperator(operator)
             );
             
             PolicyCondition condition = DtoMapper.toDomain(request);
@@ -191,5 +191,13 @@ class DtoMapperTest {
         // Then
         assertEquals(createdAt, response.createdAt());
         assertEquals(updatedAt, response.updatedAt());
+    }
+    
+    private String valueForOperator(Operator operator) {
+        return switch (operator) {
+            case GT, LT, GTE, LTE -> "10";
+            case IN, NOT_IN -> "A,B";
+            default -> "value";
+        };
     }
 }

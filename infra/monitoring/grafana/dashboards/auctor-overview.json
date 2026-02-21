@@ -1,0 +1,143 @@
+{
+  "id": null,
+  "uid": "auctor-overview",
+  "title": "Auctor Platform Overview",
+  "tags": ["auctor", "overview"],
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Service Status",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "up{job=~\"definition-service|execution-service\"}",
+          "legendFormat": "{{ job }}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {"h": 4, "w": 24, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "title": "Request Rate (req/s)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (job, uri) (rate(http_server_requests_seconds_count[5m]))",
+          "legendFormat": "{{ job }} {{ uri }}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4}
+    },
+    {
+      "id": 3,
+      "title": "Request Latency p95 (s)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, job, uri) (rate(http_server_requests_seconds_bucket[5m])))",
+          "legendFormat": "{{ job }} {{ uri }}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4}
+    },
+    {
+      "id": 4,
+      "title": "5xx Error Rate",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (job) (rate(http_server_requests_seconds_count{status=~\"5..\"}[5m]))",
+          "legendFormat": "{{ job }}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12}
+    },
+    {
+      "id": 5,
+      "title": "CPU Usage (%)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total[5m]) * 100",
+          "legendFormat": "{{ job }}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12}
+    },
+    {
+      "id": 6,
+      "title": "Memory Usage (MiB)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes / 1024 / 1024",
+          "legendFormat": "{{ job }}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20}
+    },
+    {
+      "id": 7,
+      "title": "DB Connections",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active",
+          "legendFormat": "Active {{ job }}",
+          "refId": "A"
+        },
+        {
+          "expr": "hikaricp_connections_idle",
+          "legendFormat": "Idle {{ job }}",
+          "refId": "B"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20}
+    },
+    {
+      "id": 8,
+      "title": "Execution Throughput",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(execution_started_total[5m])",
+          "legendFormat": "Started",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(execution_completed_total[5m])",
+          "legendFormat": "Completed",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(execution_failed_total[5m])",
+          "legendFormat": "Failed",
+          "refId": "C"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 28}
+    }
+  ]
+}

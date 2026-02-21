@@ -6,7 +6,6 @@ import com.auctor.definition.domain.service.PolicyEvaluator;
 import com.auctor.definition.domain.service.PolicyService;
 import com.auctor.definition.domain.service.WorkflowService;
 import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

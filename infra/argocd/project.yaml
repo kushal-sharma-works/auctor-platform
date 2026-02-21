@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: auctor
+  namespace: argocd
+spec:
+  description: Auctor platform
+  sourceRepos:
+    - https://github.com/kushal-sharma-works/auctor-platform
+    - https://github.com/kushal-sharma-works/auctor-platform.git
+  destinations:
+    - namespace: auctor
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

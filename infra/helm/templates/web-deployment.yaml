@@ -1,39 +1,97 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web
+  name: {{ include "auctor.serviceName" (dict "context" . "name" "web") }}
   labels:
-    app: web
+    {{- include "auctor.labels" (dict "context" . "name" "web") | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: web
+      {{- include "auctor.selectorLabels" (dict "context" . "name" "web") | nindent 6 }}
   template:
     metadata:
       labels:
-        app: web
+        {{- include "auctor.selectorLabels" (dict "context" . "name" "web") | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "auctor.serviceName" (dict "context" . "name" "web") }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    {{- include "auctor.selectorLabels" (dict "context" . "name" "web") | nindent 20 }}
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: web
           image: "{{ .Values.image.registry }}/web:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1000
           ports:
-            - containerPort: 3000
+            - containerPort: {{ .Values.services.web.httpPort }}
+              name: http
           env:
             - name: ENVIRONMENT
-              value: "{{ .Values.environment }}"
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: ENVIRONMENT
+            - name: NEXT_PUBLIC_OTEL_EXPORTER_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: NEXT_PUBLIC_OTEL_EXPORTER_ENDPOINT
+            - name: DEFINITION_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: DEFINITION_SERVICE_URL
+            - name: EXECUTION_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: EXECUTION_SERVICE_URL
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: GOOGLE_CLIENT_ID
+            - name: NEXT_PUBLIC_GOOGLE_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auctor.fullname" . }}-config
+                  key: NEXT_PUBLIC_GOOGLE_CLIENT_ID
+            - name: AUCTOR_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "auctor.fullname" . }}-secrets
+                  key: AUCTOR_JWT_SECRET
           readinessProbe:
             httpGet:
               path: /
-              port: 3000
+              port: {{ .Values.services.web.httpPort }}
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 3
           livenessProbe:
             httpGet:
               path: /
-              port: 3000
+              port: {{ .Values.services.web.httpPort }}
             initialDelaySeconds: 20
             periodSeconds: 15
             timeoutSeconds: 3

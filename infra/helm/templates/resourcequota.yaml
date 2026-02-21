@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: {{ include "auctor.fullname" . }}-quota
+  labels:
+    {{- include "auctor.labels" (dict "context" . "name" "quota") | nindent 4 }}
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: "16Gi"
+    limits.cpu: "16"
+    limits.memory: "32Gi"
+    pods: "20"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: {{ include "auctor.fullname" . }}-limitrange
+  labels:
+    {{- include "auctor.labels" (dict "context" . "name" "limitrange") | nindent 4 }}
+spec:
+  limits:
+    - max:
+        cpu: "2"
+        memory: "4Gi"
+      min:
+        cpu: "50m"
+        memory: "64Mi"
+      type: Container
+    - max:
+        cpu: "4"
+        memory: "8Gi"
+      min:
+        cpu: "100m"
+        memory: "128Mi"
+      type: Pod

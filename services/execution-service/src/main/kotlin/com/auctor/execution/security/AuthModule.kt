@@ -6,18 +6,47 @@ import io.ktor.server.auth.jwt.*
 
 fun Application.configureAuth() {
 
+    val config = environment.config
+    val isDev = developmentMode
+    
     install(Authentication) {
-
+        
         jwt("auth-jwt") {
-            verifier(JwtConfig.verifier)
+            val verifier = JwtConfig.buildVerifier(config, isDev)
+            verifier(verifier)
+            
+            validate { credential ->
+                JWTPrincipal(credential.payload)
+            }
+        }
+
+        jwt("auth-viewer") {
+            val verifier = JwtConfig.buildVerifier(config, isDev)
+            verifier(verifier)
 
             validate { credential ->
-                val roles =
-                    credential.payload
-                        .getClaim("roles")
-                        .asList(String::class.java)
+                val roles = credential.payload
+                    .getClaim("roles")
+                    .asList(String::class.java)
+                    ?: emptyList()
+                if (roles.contains("ADMIN") || roles.contains("VIEWER")) {
+                    JWTPrincipal(credential.payload)
+                } else {
+                    null
+                }
+            }
+        }
 
-                if (roles.contains("EXECUTOR")) {
+        jwt("auth-executor") {
+            val verifier = JwtConfig.buildVerifier(config, isDev)
+            verifier(verifier)
+
+            validate { credential ->
+                val roles = credential.payload
+                    .getClaim("roles")
+                    .asList(String::class.java)
+                    ?: emptyList()
+                if (roles.contains("ADMIN") || roles.contains("EXECUTOR")) {
                     JWTPrincipal(credential.payload)
                 } else {
                     null

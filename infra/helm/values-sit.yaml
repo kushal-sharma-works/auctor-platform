@@ -3,8 +3,25 @@ environment: sit
 logLevel: INFO
 
 ingress:
-  host: "auctor-sit.local"
+  host: "auctor-platform.sit.example.com"
   enabled: true
+
+hpa:
+  definition:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+  execution:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+  web:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
 
 resources:
   limits:

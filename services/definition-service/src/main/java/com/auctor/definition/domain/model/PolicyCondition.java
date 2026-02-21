@@ -18,5 +18,27 @@ public record PolicyCondition(
         if (value == null) {
             throw new IllegalArgumentException("value must not be null");
         }
+        if (requiresNumeric(operator) && !isNumeric(value)) {
+            throw new IllegalArgumentException(
+                "Field '" + field + "' requires numeric value for operator " + operator + ", got: " + value
+            );
+        }
+    }
+
+    private static boolean requiresNumeric(Operator operator) {
+        return operator == Operator.GT
+            || operator == Operator.LT
+            || operator == Operator.GTE
+            || operator == Operator.LTE;
+    }
+
+    private static boolean isNumeric(String value) {
+        String trimmed = value.trim();
+        try {
+            Double.parseDouble(trimmed);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 }

@@ -1,0 +1,24 @@
+<configuration>
+    <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"service":"execution-service","environment":"${ENVIRONMENT:-dev}"}</customFields>
+            <timeZone>UTC</timeZone>
+            <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                <maxLength>2048</maxLength>
+            </throwableConverter>
+        </encoder>
+    </appender>
+    
+    <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="JSON_CONSOLE"/>
+    </appender>
+
+    <root level="${LOG_LEVEL:-INFO}">
+        <appender-ref ref="ASYNC" />
+    </root>
+    
+    <logger name="io.ktor" level="WARN"/>
+    <logger name="io.netty" level="WARN"/>
+</configuration>

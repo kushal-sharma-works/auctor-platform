@@ -1,7 +1,6 @@
 package com.auctor.definition.domain.port;
 
 import com.auctor.definition.domain.model.PolicyDefinition;
-import com.auctor.definition.domain.model.PolicyId;
 
 /**
  * Port for policy command operations (writes).

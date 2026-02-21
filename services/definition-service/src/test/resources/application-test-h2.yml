@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: definition-service-test-h2
+  
+  threads:
+    virtual:
+      enabled: true
+  
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    show-sql: false
+  
+  flyway:
+    enabled: false
+  
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/test
+
+server:
+  port: 0
+
+grpc:
+  server:
+    port: 0
+
+logging:
+  level:
+    root: WARN
+    com.auctor: INFO

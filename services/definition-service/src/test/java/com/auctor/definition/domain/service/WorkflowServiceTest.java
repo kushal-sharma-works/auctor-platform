@@ -4,6 +4,8 @@ import com.auctor.definition.domain.exception.EntityNotFoundException;
 import com.auctor.definition.domain.model.*;
 import com.auctor.definition.domain.port.WorkflowCommandPort;
 import com.auctor.definition.domain.port.WorkflowQueryPort;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +21,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -33,11 +36,22 @@ class WorkflowServiceTest {
     @Mock
     private WorkflowQueryPort queryPort;
     
+    @Mock
+    private MeterRegistry meterRegistry;
+    
+    @Mock
+    private Counter counter;
+
+    @Mock
+    private Counter publishedCounter;
+    
     private WorkflowService workflowService;
     
     @BeforeEach
     void setUp() {
-        workflowService = new WorkflowService(commandPort, queryPort);
+        when(meterRegistry.counter("workflow.created.total")).thenReturn(counter);
+        when(meterRegistry.counter("workflow.published.total")).thenReturn(publishedCounter);
+        workflowService = new WorkflowService(commandPort, queryPort, meterRegistry);
     }
     
     @Test
@@ -57,6 +71,7 @@ class WorkflowServiceTest {
         // Then
         assertNotNull(result);
         verify(commandPort).save(any());
+        verify(counter).increment();
     }
     
     @Test
@@ -74,6 +89,7 @@ class WorkflowServiceTest {
         // Then
         assertNotNull(result);
         verify(commandPort).save(any());
+        verify(publishedCounter).increment();
     }
     
     @Test
