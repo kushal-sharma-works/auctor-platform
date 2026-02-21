@@ -110,6 +110,16 @@ variable "postgres_admin_password" {
   description = "PostgreSQL admin password."
   type        = string
   sensitive   = true
+
+  validation {
+    condition = (
+      length(var.postgres_admin_password) >= 16 &&
+      can(regex("[A-Z]", var.postgres_admin_password)) &&
+      can(regex("[a-z]", var.postgres_admin_password)) &&
+      can(regex("[0-9]", var.postgres_admin_password))
+    )
+    error_message = "postgres_admin_password must be at least 16 characters and include uppercase, lowercase, and numeric characters."
+  }
 }
 
 variable "redis_capacity" {

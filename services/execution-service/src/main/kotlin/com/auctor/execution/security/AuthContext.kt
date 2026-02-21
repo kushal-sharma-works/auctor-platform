@@ -14,6 +14,8 @@ fun JWTPrincipal.toAuthContext(rawToken: String?): AuthContext =
         subject = payload.subject ?: "unknown",
         email = payload.getClaim("email")?.asString()?.trim()?.ifBlank { null },
         roles = run {
+            // Intentional for this project's local/demo model:
+            // all authenticated users get EXECUTOR by default.
             val claimRoles = payload.getClaim("roles")?.asList(String::class.java) ?: emptyList()
             (claimRoles + "EXECUTOR").distinct()
         },

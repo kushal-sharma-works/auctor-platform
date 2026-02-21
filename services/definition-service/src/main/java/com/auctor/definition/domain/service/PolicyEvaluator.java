@@ -13,6 +13,10 @@ import java.util.stream.Collectors;
 /**
  * Service for evaluating policy conditions against a context.
  * Uses pattern matching for operator evaluation.
+ *
+ * Intentional behavior: string operators (EQ, NEQ, IN, NOT_IN) are evaluated
+ * case-insensitively for deterministic matching across clients. Locale.ROOT is
+ * used to avoid locale-dependent casing differences.
  */
 public class PolicyEvaluator {
 

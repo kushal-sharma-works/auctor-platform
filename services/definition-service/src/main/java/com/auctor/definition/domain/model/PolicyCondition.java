@@ -19,7 +19,9 @@ public record PolicyCondition(
             throw new IllegalArgumentException("value must not be null");
         }
         if (requiresNumeric(operator) && !isNumeric(value)) {
-            throw new IllegalArgumentException("value must be numeric for operator " + operator);
+            throw new IllegalArgumentException(
+                "Field '" + field + "' requires numeric value for operator " + operator + ", got: " + value
+            );
         }
     }
 
