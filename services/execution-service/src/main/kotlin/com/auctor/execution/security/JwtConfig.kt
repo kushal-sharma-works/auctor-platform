@@ -19,7 +19,13 @@ object JwtConfig {
             throw IllegalStateException("JWT secret must be configured for non-dev environments")
         }
 
-        val algorithm = Algorithm.HMAC256(settings.secret)
+        val effectiveSecret = if (developmentMode && settings.secret.isBlank()) {
+            "dev-only-jwt-secret-change-me"
+        } else {
+            settings.secret
+        }
+
+        val algorithm = Algorithm.HMAC256(effectiveSecret)
         return JWT.require(algorithm)
             .withIssuer(settings.issuer)
             .withAudience(settings.audience)
