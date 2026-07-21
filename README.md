@@ -1,9 +1,28 @@
 # Auctor Platform
 
+[![Definition Service](https://github.com/auctor-platform/auctor-platform/actions/workflows/ci-definition-service.yml/badge.svg)](https://github.com/auctor-platform/auctor-platform/actions/workflows/ci-definition-service.yml)
+[![Execution Service](https://github.com/auctor-platform/auctor-platform/actions/workflows/ci-execution-service.yml/badge.svg)](https://github.com/auctor-platform/auctor-platform/actions/workflows/ci-execution-service.yml)
+[![Web](https://github.com/auctor-platform/auctor-platform/actions/workflows/ci-web.yml/badge.svg)](https://github.com/auctor-platform/auctor-platform/actions/workflows/ci-web.yml)
+[![Security Scan](https://github.com/auctor-platform/auctor-platform/actions/workflows/security-scan.yml/badge.svg)](https://github.com/auctor-platform/auctor-platform/actions/workflows/security-scan.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Auctor is a policy-driven workflow execution platform for deterministic decisions and clear execution tracking.
 It separates workflow definition from execution to keep governance strict while allowing high-throughput runtime operations.
 
 The stack is documented for local-first runtime, with optional infrastructure assets for teams that want cloud deployment later.
+
+## Why I built this
+
+A policy change shouldn't require a deploy. Auctor is where I worked that idea
+out properly: definitions are versioned and immutable, execution reads them at
+runtime, and the two live in separate services that talk over gRPC.
+
+Most of the rest of the design follows from that one boundary. Deterministic
+replay needs definitions that cannot change underneath a run. Splitting
+persistence, JPA on the definition side and Exposed on the execution side, lets
+each half evolve without dragging the other along. The cache layering is there
+because the execution path reads definitions constantly and shouldn't pay full
+price every time.
 
 ## Architecture
 ```mermaid
